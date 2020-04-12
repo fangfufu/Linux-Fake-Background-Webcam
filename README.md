@@ -30,7 +30,7 @@ This automatically loads v4l2loopback module at boot, with the specified module 
 ### Setting up
 1. Replace ``fakecam/background.jpg`` with your own background image. 
 2. Build the Docker image by running ``./build.sh``.
-3. Create the Docker network bridge and container by running ``./create-container.sh``.
+3. Create the Docker network bridge and containers by running ``./create-container.sh``.
 
 ### Using the virtual webcam
 4. Run the containers by running ``./run-containers.sh``. 

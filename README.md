@@ -3,6 +3,8 @@ Video conferencing software support under Linux is relatively poor. The Linux ve
 
 Benjamen Elder wrote a [blog post](https://elder.dev/posts/open-source-virtual-background/), describing a background replacement solution using Python, OpenCV, Tensorflow and Node.js. The scripts in Elder's blogpost do not work out of box. In this repository, I tidy up his scripts, and provide a turn-key solution for creating a virtual webcam with background replacement. 
 
+This whole setup has been tested under Debian GNU/Linux, using Thinkpad T440p with an Intel i7-4900MQ CPU. 
+
 ## Prerequisite
 ### Docker
 You need to set up Docker. If you want GPU acceleration, you want to set up [Nvidia Container Toolkit](https://github.com/NVIDIA/nvidia-docker). There are a lot of guides on the Internet on how to set these up. I am not going to describe them here. Note that if you don't manage to set up Nvidia Container Toolkit, Tensorflow will fall back to CPU. This is in fact how I run mine - my GPU is too old for the current version of Tensorflow. 

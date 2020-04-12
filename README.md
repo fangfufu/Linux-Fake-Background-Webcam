@@ -41,7 +41,7 @@ This automatically loads v4l2loopback module at boot, with the specified module 
 7. If you want to remove the containers, run ``./remove-containers.sh``.
 8. If you want to remove the Docker images, run ``./remove-images.sh``.
 
-## If you want to change the background image
+### If you want to change the background image
 If you want to change your background image, do these steps: 1, 2, 7, 3.
 
 ## Modification to Elder's original post

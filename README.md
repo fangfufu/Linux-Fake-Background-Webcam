@@ -1,4 +1,4 @@
-# Linux-Background-Blur-Webcam
+# Linux-Fake-Background-Webcam
 Video conferencing software support under Linux is relatively poor. The Linux version of Zoom only supports background replacement via chroma key. The Linux version of Microsoft Team does not support background blur. 
 
 Benjamen Elder wrote a [blog post](https://elder.dev/posts/open-source-virtual-background/), describing a background replacement solution using Python, OpenCV, Tensorflow and Node.js. The scripts in Elder's blogpost do not work out of box. In this repository, I tidy up his scripts, and provide a turn-key solution for creating a virtual webcam with background replacement. 

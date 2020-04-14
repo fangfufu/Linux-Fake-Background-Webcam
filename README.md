@@ -44,6 +44,9 @@ This automatically loads v4l2loopback module at boot, with the specified module 
 ### If you want to change the background image
 If you want to change your background image, do these steps: 1, 2, 7, 3.
 
+### If your bodypix container crashes due to GPU related packages
+Please switch to the ``cpu-only`` and try again. 
+
 ## Modification to Elder's original post
 I removed the ``hologram_effect()`` function, because I don't want the hologram effect. I also corrected the command for launching the container instances - the network communication between the container wasn't set up properly. I also replaced his background image to something I took myself. 
 

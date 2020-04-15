@@ -1,4 +1,4 @@
-# Linux-Background-Blur-Webcam
+# Linux-Fake-Background-Webcam
 Video conferencing software support under Linux is relatively poor. The Linux version of Zoom only supports background replacement via chroma key. The Linux version of Microsoft Team does not support background blur. 
 
 Benjamen Elder wrote a [blog post](https://elder.dev/posts/open-source-virtual-background/), describing a background replacement solution using Python, OpenCV, Tensorflow and Node.js. The scripts in Elder's blogpost do not work out of box. In this repository, I tidy up his scripts, and provide a turn-key solution for creating a virtual webcam with background replacement. 
@@ -30,7 +30,7 @@ This automatically loads v4l2loopback module at boot, with the specified module 
 ### Setting up
 1. Replace ``fakecam/background.jpg`` with your own background image. 
 2. Build the Docker image by running ``./build.sh``.
-3. Create the Docker network bridge and container by running ``./create-container.sh``.
+3. Create the Docker network bridge and containers by running ``./create-container.sh``.
 
 ### Using the virtual webcam
 4. Run the containers by running ``./run-containers.sh``. 
@@ -43,6 +43,9 @@ This automatically loads v4l2loopback module at boot, with the specified module 
 
 ### If you want to change the background image
 If you want to change your background image, do these steps: 1, 2, 7, 3.
+
+### If your bodypix container crashes due to GPU related packages
+Please switch to the ``cpu-only`` branch and try again. 
 
 ## Modification to Elder's original post
 I removed the ``hologram_effect()`` function, because I don't want the hologram effect. I also corrected the command for launching the container instances - the network communication between the container wasn't set up properly. I also replaced his background image to something I took myself. 

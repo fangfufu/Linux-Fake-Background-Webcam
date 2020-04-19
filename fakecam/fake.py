@@ -47,7 +47,7 @@ def load_images():
 
 def handler(signal_received, frame):
     load_images()
-    print('Reloaded the background image')
+    print('Reloaded the background and foreground images')
 
 def get_mask(frame, bodypix_url='http://127.0.0.1:9000'):
     frame = cv2.resize(frame, (0, 0), fx=sf, fy=sf)

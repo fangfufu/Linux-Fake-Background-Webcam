@@ -4,7 +4,7 @@
 
 You need to have *docker* and *docker-compose* available.
 
-## Prepare config
+## Configuration 
 
 You should create a copy of `docker-compose.yml` and change to meet your needs:
 
@@ -28,3 +28,6 @@ You should create a copy of `docker-compose.yml` and change to meet your needs:
               - /dev/video1:/dev/video2
           # ...
   ```
+## Usage
+ - Run and initial build containers: ``docker-compose up`` (or ``docker-compose up -d``)
+ - Stop and remove containers: ``docker-compose down``

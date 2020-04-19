@@ -19,27 +19,34 @@ sf = 0.5
 # setup the fake camera
 fake = pyfakewebcam.FakeWebcam('/dev/video2', width, height)
 
-# load the virtual background
-background = cv2.imread("background.jpg")
-background = cv2.resize(background, (width, height))
+# declare global variables
+background = None
+foreground = None
+f_mask = None
+inv_f_mask = None
 
-foreground = cv2.imread("foreground.jpg")
-foreground = cv2.resize(foreground, (width, height))
-
-f_mask = cv2.imread("foreground-mask.png")
-f_mask = cv2.normalize(f_mask, None, alpha=0, beta=1,
-                       norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
-f_mask = cv2.resize(f_mask, (width, height))
-f_mask = cv2.cvtColor(f_mask, cv2.COLOR_BGR2GRAY)
-inv_f_mask = 1 - f_mask
-#cv2.imshow("img", inv_f_mask)
-#cv2.waitKey(0)
-
-def handler(signal_received, frame):
-    # Handle any cleanup here
+def load_images():
     global background
+    global foreground
+    global f_mask
+    global inv_f_mask
+
+    # load the virtual background
     background = cv2.imread("background.jpg")
     background = cv2.resize(background, (width, height))
+
+    foreground = cv2.imread("foreground.jpg")
+    foreground = cv2.resize(foreground, (width, height))
+
+    f_mask = cv2.imread("foreground-mask.png")
+    f_mask = cv2.normalize(f_mask, None, alpha=0, beta=1,
+                        norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+    f_mask = cv2.resize(f_mask, (width, height))
+    f_mask = cv2.cvtColor(f_mask, cv2.COLOR_BGR2GRAY)
+    inv_f_mask = 1 - f_mask
+
+def handler(signal_received, frame):
+    load_images()
     print('Reloaded the background image')
 
 def get_mask(frame, bodypix_url='http://127.0.0.1:9000'):
@@ -91,10 +98,11 @@ def get_frame(cap, background):
     return frame
 
 if __name__ == '__main__':
+    load_images()
     signal(SIGINT, handler)
     print('Running...')
     print('Please press CTRL-\ to exit.')
-    print('Please CTRL-C to reload the background image')
+    print('Please CTRL-C to reload the background and foreground images')
     # frames forever
     while True:
         frame = get_frame(cap, background)

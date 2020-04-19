@@ -42,9 +42,12 @@ This automatically loads v4l2loopback module at boot, with the specified module
 options.
 
 ## Installing with Docker
-Please refer to [DOCKER.md](DOCKER.md). The updated Docker related scripts were 
+Please refer to [DOCKER.md](DOCKER.md). The updated Docker related files were
 added by [liske](https://github.com/liske).
 
+Using Docker is unnecessary. However it makes starting up and shutting down
+the virtual webcam very easy and convenient. The only downside is that you
+lose the ability to change background and foreground images on the fly.
 
 ## Installing without Docker
 Please also make sure that your TCP port ``127.0.0.1:9000`` is free, as we will

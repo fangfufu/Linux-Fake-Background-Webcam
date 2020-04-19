@@ -1,7 +1,7 @@
 # Linux-Fake-Background-Webcam
 ## IMPORTANT UPDATES
-I removed all the GPU related code and Docker related code, as the dependencies
-are not that hard to satisfy, and the code now run fast enough without GPU.
+I removed all the GPU related code as the code now run fast enough without GPU. The Docker related stuff is now optional and has been moved to [DOCKER.md](DOCKER.md).
+
 
 ## Background
 Video conferencing software support under Linux is relatively poor. The Linux
@@ -83,8 +83,6 @@ If you want to change the webcam background in the middle of streaming, replace
 ``background.jpg``` in ``fakecam``, and press ``CTRL-C``
 
 ## Modification to Elder's original post
-I removed all the Docker related nonsense.
-
 I removed the ``hologram_effect()`` function, because I don't want the hologram
 effect. I also corrected the command for launching the container instances - the
 network communication between the container wasn't set up properly. I also
@@ -93,3 +91,5 @@ replaced his background image to something I took myself.
 I scale down the image send to bodypix, and scale up the mask received from
 bodypix. I dilated the mask further to compensate for the scaling. This made the
 whole thing to run fast enough using only CPU.
+
+The updated Docker related scripts were added by [liske](https://github.com/liske).

@@ -5,7 +5,6 @@ docker create \
   --name=bodypix \
   --network=fakecam \
   -p 9000:9000 \
-  --gpus=all --shm-size=1g --ulimit memlock=-1 --ulimit stack=67108864 \
   bodypix
 
 docker create \

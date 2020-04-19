@@ -77,10 +77,14 @@ In the other terminal window, do the following:
     cd fakecam
     python3 fake.py
 
-The background image is located in ``fakecam/background.jpg``.
+The files that you might want to replace are the followings:
 
-If you want to change the webcam background in the middle of streaming, replace
-``background.jpg``` in ``fakecam``, and press ``CTRL-C``
+  - ``fakecam/background.jpg`` - the background image
+  - ``fakecam/foreground.jpg`` - the foreground image
+  - ``fakecam/foreground-mask.jpg`` - the foreground image mask
+
+If you want to change the files above in the middle of streaming, replace them
+and press ``CTRL-C``
 
 ## Modification to Elder's original post
 I removed the ``hologram_effect()`` function, because I don't want the hologram

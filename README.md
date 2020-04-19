@@ -9,16 +9,14 @@ Benjamen Elder wrote a
 [blog post](https://elder.dev/posts/open-source-virtual-background/), describing
 a background replacement solution using Python, OpenCV, Tensorflow and Node.js.
 The scripts in Elder's blogpost do not work out of box. In this repository, I
-tidy up his scripts, and provide a turn-key solution for creating a virtual
-webcam with background replacement.
+tidied up his scripts, and provide a turn-key solution for creating a virtual
+webcam with background replacement and additionally foreground object placement,
+e.g. a podium. 
 
 Rather than using GPU for acceleration as described by the original blog post, 
 this version if CPU-only to avoid all the unnecessary complexities. By 
 downscaling the image sent to bodypix neural network, and upscaling the 
 received mask, this whole setup runs sufficiently fast under Intel i7-4900MQ. 
-
-In addition to background replacement. This particular variant also supports
-placing objects in the foreground, e.g. a podium. 
 
 ## Prerequisite
 You need to install v4l2loopback. If you are on Debian Buster, you can do the

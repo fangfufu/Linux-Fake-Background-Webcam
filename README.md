@@ -1,7 +1,7 @@
 # Linux-Fake-Background-Webcam
 ## IMPORTANT UPDATES
-I removed all the GPU related code and Docker related code, as the dependencies
-are not that hard to satisfy, and the code now run fast enough without GPU.
+I removed all the GPU related code as the code now run fast enough without GPU. The Docker related stuff is now optional and has been moved to [DOCKER.md](DOCKER.md).
+
 
 ## Background
 Video conferencing software support under Linux is relatively poor. The Linux

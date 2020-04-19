@@ -1,0 +1,24 @@
+version: '3'
+services:
+    bodypix:
+        image: bodypix
+        build:
+            context: ./bodypix
+        network_mode: host
+        read_only: true
+
+    fakecam:
+        image: fakecam
+        build:
+            context: ./fakecam
+        network_mode: host
+        read_only: true
+        # volumes:
+        #   - /path/to/background.jpg:/src/background.jpg:ro
+        devices:
+            # input (webcam)
+            - /dev/video0:/dev/video0
+            # output (virtual webcam)
+            - /dev/video2:/dev/video2
+        depends_on:
+            - bodypix

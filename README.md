@@ -83,8 +83,6 @@ If you want to change the webcam background in the middle of streaming, replace
 ``background.jpg``` in ``fakecam``, and press ``CTRL-C``
 
 ## Modification to Elder's original post
-I removed all the Docker related nonsense.
-
 I removed the ``hologram_effect()`` function, because I don't want the hologram
 effect. I also corrected the command for launching the container instances - the
 network communication between the container wasn't set up properly. I also
@@ -93,3 +91,5 @@ replaced his background image to something I took myself.
 I scale down the image send to bodypix, and scale up the mask received from
 bodypix. I dilated the mask further to compensate for the scaling. This made the
 whole thing to run fast enough using only CPU.
+
+The updated Docker related scripts were added by [liske](https://github.com/liske).

@@ -1,7 +1,4 @@
 # Linux-Fake-Background-Webcam
-## IMPORTANT UPDATES
-I removed all the GPU related code as the code now run fast enough without GPU. The Docker related stuff is now optional and has been moved to [DOCKER.md](DOCKER.md).
-
 
 ## Background
 Video conferencing software support under Linux is relatively poor. The Linux
@@ -15,32 +12,12 @@ The scripts in Elder's blogpost do not work out of box. In this repository, I
 tidy up his scripts, and provide a turn-key solution for creating a virtual
 webcam with background replacement.
 
-This whole setup is relatively CPU intensive. However it has been tested under
-Debian GNU/Linux, using Thinkpad T440p with an Intel i7-4900MQ CPU. The webcam
-performs at an adequate frame rate.
+Rather than using GPU for acceleration as described by the original blog post, 
+this version if CPU-only to avoid all the unnecessary complexities. By 
+downscaling the image sent to bodypix neural network, and upscaling the 
+received mask, this whole setup runs sufficiently fast under Intel i7-4900MQ. 
 
 ## Prerequisite
-You need to have Node.js. Node.js version 12 is known to work. You will also
-need Python 3.
-
-Please also make sure that your TCP port ``127.0.0.1:9000`` is free, as we will
-be using it.
-
-### Python 3
-You need to have pip installed. Please make sure that you have installed the
-correct version pip, if you have both Python 2 and Python 3 installed. Please
-make sure that the command ``pip3`` runs.
-
-I am assuming that you have set up your user environment properly, and when you
-install Python packages, they will be installed locally within your home
-directory.
-
-You might want to add the following line in your ``.profile``. This line is
-needed for Debian Buster.
-
-    export PATH="$HOME/.local/bin":$PATH
-
-### V4l2loopback
 You need to install v4l2loopback. If you are on Debian Buster, you can do the
 following:
     
@@ -63,10 +40,34 @@ I also created ``/etc/modules-load.d/v4l2loopback`` with the following content:
 This automatically loads v4l2loopback module at boot, with the specified module
 options.
 
-## Installation
+## Installing with Docker
+Please refer to [DOCKER.md](DOCKER.md). The updated Docker related scripts were 
+added by [liske](https://github.com/liske).
+
+
+## Installing without Docker
+Please also make sure that your TCP port ``127.0.0.1:9000`` is free, as we will
+be using it.
+
+You need to have Node.js. Node.js version 12 is known to work. 
+
+You will need Python 3. You need to have pip installed. Please make sure that 
+you have installed the correct version pip, if you have both Python 2 and 
+Python 3 installed. Please make sure that the command ``pip3`` runs.
+
+I am assuming that you have set up your user environment properly, and when you
+install Python packages, they will be installed locally within your home
+directory.
+
+You might want to add the following line in your ``.profile``. This line is
+needed for Debian Buster.
+
+    export PATH="$HOME/.local/bin":$PATH
+
+### Installation
 Run ``./install.sh``.
 
-## Usage
+### Usage
 You need to open two terminal windows. In one terminal window, do the following:
 
     cd bodypix
@@ -85,15 +86,3 @@ The files that you might want to replace are the followings:
 
 If you want to change the files above in the middle of streaming, replace them
 and press ``CTRL-C``
-
-## Modification to Elder's original post
-I removed the ``hologram_effect()`` function, because I don't want the hologram
-effect. I also corrected the command for launching the container instances - the
-network communication between the container wasn't set up properly. I also
-replaced his background image to something I took myself.
-
-I scale down the image send to bodypix, and scale up the mask received from
-bodypix. I dilated the mask further to compensate for the scaling. This made the
-whole thing to run fast enough using only CPU.
-
-The updated Docker related scripts were added by [liske](https://github.com/liske).

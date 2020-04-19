@@ -17,6 +17,9 @@ this version if CPU-only to avoid all the unnecessary complexities. By
 downscaling the image sent to bodypix neural network, and upscaling the 
 received mask, this whole setup runs sufficiently fast under Intel i7-4900MQ. 
 
+In addition to background replacement. This particular variant also supports
+placing objects in the foreground, e.g. a podium. 
+
 ## Prerequisite
 You need to install v4l2loopback. If you are on Debian Buster, you can do the
 following:

@@ -13,6 +13,6 @@ RUN pip3 install --no-cache-dir pyfakewebcam
 
 WORKDIR /src
 
-COPY background.jpg fake.py /src/
+COPY foreground.jpg foreground-mask.png background.jpg fake.py /src/
 
 ENTRYPOINT python3 -u fake.py

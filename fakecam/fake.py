@@ -13,20 +13,23 @@ cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
 cap.set(cv2.CAP_PROP_FPS, 30)
 
+# The scale factor for image sent to bodypix
+sf = 0.5
+
 # setup the fake camera
 fake = pyfakewebcam.FakeWebcam('/dev/video2', width, height)
 
 # load the virtual background
 background = cv2.imread("background.jpg")
-background_scaled = cv2.resize(background, (width, height))
+background = cv2.resize(background, (width, height))
 
-# The scale factor for image sent to bodypix
-sf = 0.5
 
 def handler(signal_received, frame):
     # Handle any cleanup here
-    print('SIGINT or CTRL-C detected. Exiting gracefully')
-    exit(0)
+    global background
+    background = cv2.imread("background.jpg")
+    background = cv2.resize(background, (width, height))
+    print('Reloaded the background image')
 
 def get_mask(frame, bodypix_url='http://127.0.0.1:9000'):
     frame = cv2.resize(frame, (0, 0), fx=sf, fy=sf)
@@ -56,7 +59,7 @@ def shift_image(img, dx, dy):
         img[:, dx:] = 0
     return img
 
-def get_frame(cap, background_scaled):
+def get_frame(cap, background):
     _, frame = cap.read()
     # fetch the mask with retries (the app needs to warmup and we're lazy)
     # e v e n t u a l l y c o n s i s t e n t
@@ -69,15 +72,17 @@ def get_frame(cap, background_scaled):
     # composite the foreground and background
     inv_mask = 1-mask
     for c in range(frame.shape[2]):
-        frame[:,:,c] = frame[:,:,c]*mask + background_scaled[:,:,c]*inv_mask
+        frame[:,:,c] = frame[:,:,c]*mask + background[:,:,c]*inv_mask
     return frame
 
 if __name__ == '__main__':
     signal(SIGINT, handler)
-    print('Running. Press CTRL-C to exit.')
+    print('Running...')
+    print('Please press CTRL-\ to exit.')
+    print('Please CTRL-C to reload the background image')
     # frames forever
     while True:
-        frame = get_frame(cap, background_scaled)
+        frame = get_frame(cap, background)
         # fake webcam expects RGB
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         fake.schedule_frame(frame)

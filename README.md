@@ -77,6 +77,10 @@ In the other terminal window, do the following:
     cd fakecam
     python3 fake.py
 
+The background image is located in ``fakecam/background.jpg``.
+
+If you want to change the webcam background in the middle of streaming, replace
+``background.jpg``` in ``fakecam``, and press ``CTRL-C``
 
 ## Modification to Elder's original post
 I removed all the Docker related nonsense.

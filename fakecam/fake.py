@@ -9,9 +9,13 @@ from sys import exit
 # setup access to the *real* webcam
 cap = cv2.VideoCapture('/dev/video0')
 height, width = 720, 1280
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
 cap.set(cv2.CAP_PROP_FPS, 30)
+
+# In case the real webcam does not support the requested mode.
+height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
 
 # The scale factor for image sent to bodypix
 sf = 0.5

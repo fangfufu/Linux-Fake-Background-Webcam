@@ -14,7 +14,7 @@ webcam with background replacement and additionally foreground object placement,
 e.g. a podium. 
 
 Rather than using GPU for acceleration as described by the original blog post, 
-this version if CPU-only to avoid all the unnecessary complexities. By 
+this version is CPU-only to avoid all the unnecessary complexities. By 
 downscaling the image sent to bodypix neural network, and upscaling the 
 received mask, this whole setup runs sufficiently fast under Intel i7-4900MQ. 
 

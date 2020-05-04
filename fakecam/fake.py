@@ -1,7 +1,6 @@
 import asyncio
 import signal
 import sys
-import threading
 import traceback
 from argparse import ArgumentParser
 from functools import partial
@@ -21,13 +20,13 @@ class FakeCam:
         width: int = 1280,
         height: int = 720,
         scale_factor: float = 0.5,
-        process_foreground: bool = False,
+        no_foreground: bool = False,
         bodypix_url: str = "http://127.0.0.1:9000",
         background_image: str = "background.jpg",
         foreground_image: str = "foreground.jpg",
         foreground_mask_image: str = "foreground-mask.png",
     ) -> None:
-        self.process_foreground = process_foreground
+        self.no_foreground = no_foreground
         self.background_image = background_image
         self.foreground_image = foreground_image
         self.foreground_mask_image = foreground_mask_image
@@ -86,7 +85,7 @@ class FakeCam:
             self.images: Dict[str, Any] = {}
             background = cv2.imread(self.background_image)
             self.images["background"] = cv2.resize(background, (self.width, self.height))
-            if self.process_foreground:
+            if not self.no_foreground:
                 foreground = cv2.imread(self.foreground_image)
                 self.images["foreground"] = cv2.resize(foreground, (self.width, self.height))
                 foreground_mask = cv2.imread(self.foreground_mask_image)
@@ -114,7 +113,7 @@ class FakeCam:
             for c in range(frame.shape[2]):
                 frame[:, :, c] = frame[:, :, c] * mask + self.images["background"][:, :, c] * (1 - mask)
 
-        if self.process_foreground:
+        if not self.no_foreground:
             async with self.lock:
                 for c in range(frame.shape[2]):
                     frame[:, :, c] = (
@@ -138,7 +137,7 @@ class FakeCam:
 def parse_args():
     parser = ArgumentParser(description="Fake cam")
     parser.add_argument(
-        "-p", "--process-foreground", default=False, action="store_true", help="Enable foreground processing"
+        "-p", "--no-foreground", default=False, action="store_true", help="Disable foreground image"
     )
     parser.add_argument("-f", "--fps", default=30, type=int, help="How many FPS to process")
     parser.add_argument("-w", "--width", default=1280, type=int, help="Camera width")
@@ -170,7 +169,7 @@ def main():
         width=args.width,
         height=args.height,
         scale_factor=args.scale_factor,
-        process_foreground=args.process_foreground,
+        process_foreground=args.no_foreground,
         bodypix_url=args.bodypix_url,
         background_image=args.background_image,
         foreground_image=args.foreground_image,

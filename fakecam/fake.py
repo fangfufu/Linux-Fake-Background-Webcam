@@ -1,9 +1,13 @@
+import asyncio
 import signal
 import sys
+import threading
+import traceback
 from argparse import ArgumentParser
 from functools import partial
 from typing import Any, Dict
 
+import aiohttp
 import cv2
 import numpy as np
 import pyfakewebcam
@@ -39,6 +43,7 @@ class FakeCam:
         self.inverted_foreground_mask = None
         self.session = requests.Session()
         self.images: Dict[str, Any] = {}
+        self.lock = asyncio.Lock()
 
     def _setup_real_cam_properties(self):
         self.real_cam.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
@@ -48,20 +53,20 @@ class FakeCam:
         self.height = int(self.real_cam.get(cv2.CAP_PROP_FRAME_HEIGHT))
         self.width = int(self.real_cam.get(cv2.CAP_PROP_FRAME_WIDTH))
 
-    def _get_mask(self, frame):
+    async def _get_mask(self, frame, session):
         frame = cv2.resize(frame, (0, 0), fx=self.scale_factor, fy=self.scale_factor)
         _, data = cv2.imencode(".png", frame)
-        r = self.session.post(
-            url=self.bodypix_url, data=data.tobytes(), headers={"Content-Type": "application/octet-stream"}
-        )
-        mask = np.frombuffer(r.content, dtype=np.uint8)
-        mask = mask.reshape((frame.shape[0], frame.shape[1]))
-        mask = cv2.resize(
-            mask, (0, 0), fx=1 / self.scale_factor, fy=1 / self.scale_factor, interpolation=cv2.INTER_NEAREST
-        )
-        mask = cv2.dilate(mask, np.ones((20, 20), np.uint8), iterations=1)
-        mask = cv2.blur(mask.astype(float), (30, 30))
-        return mask
+        async with session.post(
+            url=self.bodypix_url, data=data.tostring(), headers={"Content-Type": "application/octet-stream"}
+        ) as r:
+            mask = np.frombuffer(await r.read(), dtype=np.uint8)
+            mask = mask.reshape((frame.shape[0], frame.shape[1]))
+            mask = cv2.resize(
+                mask, (0, 0), fx=1 / self.scale_factor, fy=1 / self.scale_factor, interpolation=cv2.INTER_NEAREST
+            )
+            mask = cv2.dilate(mask, np.ones((20, 20), np.uint8), iterations=1)
+            mask = cv2.blur(mask.astype(float), (30, 30))
+            return mask
 
     def shift_image(self, img, dx, dy):
         img = np.roll(img, dy, axis=0)
@@ -76,51 +81,58 @@ class FakeCam:
             img[:, dx:] = 0
         return img
 
-    def load_images(self):
-        background = cv2.imread(self.background_image)
-        self.images["background"] = cv2.resize(background, (self.width, self.height))
-        if self.process_foreground:
-            foreground = cv2.imread(self.foreground_image)
-            self.images["foreground"] = cv2.resize(foreground, (self.width, self.height))
-            foreground_mask = cv2.imread(self.foreground_mask_image)
-            foreground_mask = cv2.normalize(
-                foreground_mask, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F
-            )
-            foreground_mask = cv2.resize(foreground_mask, (self.width, self.height))
-            self.images["foreground_mask"] = cv2.cvtColor(foreground_mask, cv2.COLOR_BGR2GRAY)
-            self.images["inverted_foreground_mask"] = 1 - self.images["foreground_mask"]
+    async def load_images(self):
+        async with self.lock:
+            self.images: Dict[str, Any] = {}
+            background = cv2.imread(self.background_image)
+            self.images["background"] = cv2.resize(background, (self.width, self.height))
+            if self.process_foreground:
+                foreground = cv2.imread(self.foreground_image)
+                self.images["foreground"] = cv2.resize(foreground, (self.width, self.height))
+                foreground_mask = cv2.imread(self.foreground_mask_image)
+                foreground_mask = cv2.normalize(
+                    foreground_mask, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F
+                )
+                foreground_mask = cv2.resize(foreground_mask, (self.width, self.height))
+                self.images["foreground_mask"] = cv2.cvtColor(foreground_mask, cv2.COLOR_BGR2GRAY)
+                self.images["inverted_foreground_mask"] = 1 - self.images["foreground_mask"]
 
-    def get_frame(self):
+    async def get_frame(self, session):
         _, frame = self.real_cam.read()
         # fetch the mask with retries (the app needs to warmup and we're lazy)
         # e v e n t u a l l y c o n s i s t e n t
         mask = None
         while mask is None:
             try:
-                mask = self._get_mask(frame)
+                mask = await self._get_mask(frame, session)
             except Exception as e:
                 print(f"Mask request failed, retrying: {e}")
+                traceback.print_exc()
 
         # composite the foreground and background
-        for c in range(frame.shape[2]):
-            frame[:, :, c] = frame[:, :, c] * mask + self.images["background"][:, :, c] * (1 - mask)
+        async with self.lock:
+            for c in range(frame.shape[2]):
+                frame[:, :, c] = frame[:, :, c] * mask + self.images["background"][:, :, c] * (1 - mask)
 
         if self.process_foreground:
-            for c in range(frame.shape[2]):
-                frame[:, :, c] = (
-                    frame[:, :, c] * self.images["inverted_foreground_mask"]
-                    + self.images["foreground"][:, :, c] * self.images["foreground_mask"]
-                )
+            async with self.lock:
+                for c in range(frame.shape[2]):
+                    frame[:, :, c] = (
+                        frame[:, :, c] * self.images["inverted_foreground_mask"]
+                        + self.images["foreground"][:, :, c] * self.images["foreground_mask"]
+                    )
 
         return frame
 
     def fake_frame(self, frame):
         self.fake_cam.schedule_frame(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
 
-    def run(self):
-        while True:
-            frame = self.get_frame()
-            self.fake_frame(frame)
+    async def run(self):
+        await self.load_images()
+        async with aiohttp.ClientSession() as session:
+            while True:
+                frame = await self.get_frame(session)
+                self.fake_frame(frame)
 
 
 def parse_args():
@@ -141,7 +153,12 @@ def parse_args():
     return parser.parse_args()
 
 
-def sigint_handler(cam, signal, frame):
+def sigint_handler(loop, cam, signal, frame):
+    print("Reloading background / foreground images")
+    asyncio.ensure_future(cam.load_images())
+
+
+def sigquit_handler(loop, cam, signal, frame):
     print("Killing fake cam process")
     sys.exit(0)
 
@@ -159,12 +176,14 @@ def main():
         foreground_image=args.foreground_image,
         foreground_mask_image=args.foreground_mask_image,
     )
-    cam.load_images()
-    signal.signal(signal.SIGINT, partial(sigint_handler, cam))
+    loop = asyncio.get_event_loop()
+    signal.signal(signal.SIGINT, partial(sigint_handler, loop, cam))
+    signal.signal(signal.SIGQUIT, partial(sigquit_handler, loop, cam))
     print("Running...")
-    print("Please CTRL-C to exit")
+    print("Please CTRL-C to reload the background / foreground images")
+    print("Please CTRL-\ to exit")
     # frames forever
-    cam.run()
+    loop.run_until_complete(cam.run())
 
 
 if __name__ == "__main__":

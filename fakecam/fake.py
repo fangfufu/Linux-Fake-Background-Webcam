@@ -169,7 +169,7 @@ def main():
         width=args.width,
         height=args.height,
         scale_factor=args.scale_factor,
-        process_foreground=args.no_foreground,
+        no_foreground=args.no_foreground,
         bodypix_url=args.bodypix_url,
         background_image=args.background_image,
         foreground_image=args.foreground_image,

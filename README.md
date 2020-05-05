@@ -41,6 +41,14 @@ I also created ``/etc/modules-load.d/v4l2loopback`` with the following content:
 This automatically loads v4l2loopback module at boot, with the specified module
 options.
 
+If you get an error like
+```
+OSError: [Errno 22] Invalid argument
+```
+
+when opening the webcam from Python, please install v4l2loopback from the [github](https://github.com/umlaeute/v4l2loopback) repo, 
+as you could have an old version from your package manager.
+
 ## Installing with Docker
 Please refer to [DOCKER.md](DOCKER.md). The updated Docker related files were
 added by [liske](https://github.com/liske).

@@ -10,6 +10,7 @@ RUN apt-get update && \
       && rm -rf /var/cache/apt/* /var/lib/apt/lists/*
 
 RUN pip3 install --no-cache-dir pyfakewebcam
+RUN pip3 install --no-cache-dir aiohttp
 
 WORKDIR /src
 

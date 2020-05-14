@@ -21,6 +21,7 @@ class FakeCam:
         height: int = 720,
         scale_factor: float = 0.5,
         no_foreground: bool = False,
+        transparent_bg: bool = False,
         bodypix_url: str = "http://127.0.0.1:9000",
         background_image: str = "background.jpg",
         foreground_image: str = "foreground.jpg",
@@ -43,6 +44,7 @@ class FakeCam:
         self.session = requests.Session()
         self.images: Dict[str, Any] = {}
         self.lock = asyncio.Lock()
+        self.transparent_bg = transparent_bg
 
     def _setup_real_cam_properties(self):
         self.real_cam.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
@@ -108,18 +110,24 @@ class FakeCam:
                 print(f"Mask request failed, retrying: {e}")
                 traceback.print_exc()
 
-        # composite the foreground and background
-        async with self.lock:
-            for c in range(frame.shape[2]):
-                frame[:, :, c] = frame[:, :, c] * mask + self.images["background"][:, :, c] * (1 - mask)
-
-        if not self.no_foreground:
+        # transparent mode
+        if self.transparent_bg:
             async with self.lock:
                 for c in range(frame.shape[2]):
-                    frame[:, :, c] = (
-                        frame[:, :, c] * self.images["inverted_foreground_mask"]
-                        + self.images["foreground"][:, :, c] * self.images["foreground_mask"]
-                    )
+                    frame[:, :, c] = frame[:, :, c] * mask
+        else:
+            # composite the foreground and background
+            async with self.lock:
+                for c in range(frame.shape[2]):
+                    frame[:, :, c] = frame[:, :, c] * mask + self.images["background"][:, :, c] * (1 - mask)
+
+            if not self.no_foreground:
+                async with self.lock:
+                    for c in range(frame.shape[2]):
+                        frame[:, :, c] = (
+                            frame[:, :, c] * self.images["inverted_foreground_mask"]
+                            + self.images["foreground"][:, :, c] * self.images["foreground_mask"]
+                        )
 
         return frame
 
@@ -140,6 +148,7 @@ def parse_args():
         "-p", "--no-foreground", default=False, action="store_true", help="Disable foreground image"
     )
     parser.add_argument("-f", "--fps", default=30, type=int, help="How many FPS to process")
+    parser.add_argument("-t", "--transparent-bg", default=False, action="store_true", help="switch to enable transparent background.")
     parser.add_argument("-w", "--width", default=1280, type=int, help="Camera width")
     parser.add_argument("-H", "--height", default=720, type=int, help="Camera height")
     parser.add_argument("-s", "--scale-factor", default=0.5, type=float, help="Scale factor")
@@ -174,6 +183,7 @@ def main():
         background_image=args.background_image,
         foreground_image=args.foreground_image,
         foreground_mask_image=args.foreground_mask_image,
+        transparent_bg=args.transparent_bg
     )
     loop = asyncio.get_event_loop()
     signal.signal(signal.SIGINT, partial(sigint_handler, loop, cam))

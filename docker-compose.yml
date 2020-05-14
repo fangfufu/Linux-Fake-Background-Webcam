@@ -4,14 +4,12 @@ services:
         image: bodypix
         build:
             context: ./bodypix
-        network_mode: host
         read_only: true
 
     fakecam:
         image: fakecam
         build:
             context: ./fakecam
-        network_mode: host
         read_only: true
         # volumes:
         #   - /path/to/background.jpg:/src/background.jpg:ro
@@ -24,3 +22,4 @@ services:
             - /dev/video2:/dev/video2
         depends_on:
             - bodypix
+        entrypoint: [ 'python3', '-u', 'fake.py', '-b', 'http://bodypix:9000/']

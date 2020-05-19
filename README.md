@@ -98,3 +98,7 @@ The files that you might want to replace are the followings:
 
 If you want to change the files above in the middle of streaming, replace them
 and press ``CTRL-C``
+
+Note that animated background is now support. The background image does not have 
+to be a jpeg file. For the implementation details, please refer to commit 
+[ee867be](https://github.com/fangfufu/Linux-Fake-Background-Webcam/commit/ee867be88e8fe5c9cfdd7d7a69f12ed3c3fb904c).

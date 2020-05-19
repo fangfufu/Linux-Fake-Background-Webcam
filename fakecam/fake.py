@@ -102,7 +102,7 @@ class FakeCam:
                         ret, frame = background_video.read()
                         if not ret:
                             background_video.set(cv2.CAP_PROP_POS_FRAMES, 0)
-                            ret, frame = background.read()
+                            ret, frame = background_video.read()
                             assert ret, 'cannot read frame %r' % self.background_image
                         frame = cv2.resize(frame, (self.width, self.height))
                         yield frame

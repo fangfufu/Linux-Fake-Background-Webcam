@@ -1,9 +1,12 @@
 # Linux-Fake-Background-Webcam
 
 ## Background
-Video conferencing software support under Linux is relatively poor. The Linux
-version of Zoom only supports background replacement via chroma key. The Linux
-version of Microsoft Team does not support background blur.
+Video conferencing software support for background blurring and background 
+replacement under Linux is relatively poor. The Linux version of Zoom only 
+supports background replacement via chroma key. The Linux version of Microsoft 
+Team does not support background blur. Over at Webcamoid, we tried to figure out
+if we can do these reliably using open source software 
+([issues/250](https://github.com/webcamoid/webcamoid/issues/250)).
 
 Benjamen Elder wrote a
 [blog post](https://elder.dev/posts/open-source-virtual-background/), describing
@@ -103,6 +106,7 @@ and press ``CTRL-C``
 Note that animated background is now support. The background image does not have 
 to be a jpeg file. For the implementation details, please refer to commit 
 [ee867be](https://github.com/fangfufu/Linux-Fake-Background-Webcam/commit/ee867be88e8fe5c9cfdd7d7a69f12ed3c3fb904c).
+Basically you can use any video file that your OpenCV can read. 
 
 If you are not running fakecam.py under Docker, it supports the following options:
 
@@ -138,3 +142,29 @@ If you are not running fakecam.py under Docker, it supports the following option
                             Webcam path
     -V V4L2LOOPBACK_PATH, --v4l2loopback-path V4L2LOOPBACK_PATH
                             V4l2loopback device path
+## License
+
+    Linux Fake Background Webcam
+    Copyright (C) 2020  Fufu Fang
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+    
+Please note that Benjamen Elder's 
+[blog post](https://elder.dev/posts/open-source-virtual-background/)
+is licensed under CC BY 4.0 (see the bottom of that webpage). According to 
+[FSF](https://www.fsf.org/blogs/licensing/cc-by-4-0-and-cc-by-sa-4-0-added-to-our-list-of-free-licenses),
+CC BY 4.0 is a noncopyleft license that is compatible with the GNU General 
+Public License version 3.0 (GPLv3), meaning I can adapt a CC BY 4.0 
+licensed work, forming a larger work, then release it under the terms 
+of GPLv3.

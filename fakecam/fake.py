@@ -1,4 +1,5 @@
 import asyncio
+import itertools
 import signal
 import sys
 import traceback
@@ -83,8 +84,25 @@ class FakeCam:
     async def load_images(self):
         async with self.lock:
             self.images: Dict[str, Any] = {}
+
             background = cv2.imread(self.background_image)
-            self.images["background"] = cv2.resize(background, (self.width, self.height))
+            if background is not None:
+                background = cv2.resize(background, (self.width, self.height))
+                background = itertools.repeat(background)
+            else:
+                background_video = cv2.VideoCapture(self.background_image)
+                def iter_frames():
+                    while True:
+                        ret, frame = background_video.read()
+                        if not ret:
+                            background_video.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                            ret, frame = background.read()
+                            assert ret, 'cannot read frame %r' % self.background_image
+                        frame = cv2.resize(frame, (self.width, self.height))
+                        yield frame
+                background = iter_frames()
+            self.images["background"] = background
+
             if not self.no_foreground:
                 foreground = cv2.imread(self.foreground_image)
                 self.images["foreground"] = cv2.resize(foreground, (self.width, self.height))
@@ -110,8 +128,9 @@ class FakeCam:
 
         # composite the foreground and background
         async with self.lock:
+            background = next(self.images["background"])
             for c in range(frame.shape[2]):
-                frame[:, :, c] = frame[:, :, c] * mask + self.images["background"][:, :, c] * (1 - mask)
+                frame[:, :, c] = frame[:, :, c] * mask + background[:, :, c] * (1 - mask)
 
         if not self.no_foreground:
             async with self.lock:

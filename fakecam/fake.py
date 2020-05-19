@@ -17,15 +17,17 @@ import requests
 class FakeCam:
     def __init__(
         self,
-        fps: int = 30,
-        width: int = 1280,
-        height: int = 720,
-        scale_factor: float = 0.5,
-        no_foreground: bool = False,
-        bodypix_url: str = "http://127.0.0.1:9000",
-        background_image: str = "background.jpg",
-        foreground_image: str = "foreground.jpg",
-        foreground_mask_image: str = "foreground-mask.png",
+        fps: int,
+        width: int,
+        height: int,
+        scale_factor: float,
+        no_foreground: bool,
+        bodypix_url: str,
+        background_image: str,
+        foreground_image: str,
+        foreground_mask_image: str,
+        webcam_path: str,
+        v4l2loopback_path: str
     ) -> None:
         self.no_foreground = no_foreground
         self.background_image = background_image
@@ -36,9 +38,10 @@ class FakeCam:
         self.width = width
         self.scale_factor = scale_factor
         self.bodypix_url = bodypix_url
-        self.real_cam = cv2.VideoCapture("/dev/video0")
+        self.real_cam = cv2.VideoCapture(webcam_path)
         self._setup_real_cam_properties()
-        self.fake_cam = pyfakewebcam.FakeWebcam("/dev/video2", self.width, self.height)
+        self.fake_cam = pyfakewebcam.FakeWebcam(v4l2loopback_path, self.width,
+                                                self.height)
         self.foreground_mask = None
         self.inverted_foreground_mask = None
         self.session = requests.Session()
@@ -54,15 +57,18 @@ class FakeCam:
         self.width = int(self.real_cam.get(cv2.CAP_PROP_FRAME_WIDTH))
 
     async def _get_mask(self, frame, session):
-        frame = cv2.resize(frame, (0, 0), fx=self.scale_factor, fy=self.scale_factor)
+        frame = cv2.resize(frame, (0, 0), fx=self.scale_factor,
+                           fy=self.scale_factor)
         _, data = cv2.imencode(".png", frame)
         async with session.post(
-            url=self.bodypix_url, data=data.tostring(), headers={"Content-Type": "application/octet-stream"}
+            url=self.bodypix_url, data=data.tostring(),
+            headers={"Content-Type": "application/octet-stream"}
         ) as r:
             mask = np.frombuffer(await r.read(), dtype=np.uint8)
             mask = mask.reshape((frame.shape[0], frame.shape[1]))
             mask = cv2.resize(
-                mask, (0, 0), fx=1 / self.scale_factor, fy=1 / self.scale_factor, interpolation=cv2.INTER_NEAREST
+                mask, (0, 0), fx=1 / self.scale_factor,
+                fy=1 / self.scale_factor, interpolation=cv2.INTER_NEAREST
             )
             mask = cv2.dilate(mask, np.ones((20, 20), np.uint8), iterations=1)
             mask = cv2.blur(mask.astype(float), (30, 30))
@@ -105,13 +111,16 @@ class FakeCam:
 
             if not self.no_foreground:
                 foreground = cv2.imread(self.foreground_image)
-                self.images["foreground"] = cv2.resize(foreground, (self.width, self.height))
+                self.images["foreground"] = cv2.resize(foreground,
+                                                       (self.width, self.height))
                 foreground_mask = cv2.imread(self.foreground_mask_image)
                 foreground_mask = cv2.normalize(
-                    foreground_mask, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F
-                )
-                foreground_mask = cv2.resize(foreground_mask, (self.width, self.height))
-                self.images["foreground_mask"] = cv2.cvtColor(foreground_mask, cv2.COLOR_BGR2GRAY)
+                    foreground_mask, None, alpha=0, beta=1,
+                    norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+                foreground_mask = cv2.resize(foreground_mask,
+                                             (self.width, self.height))
+                self.images["foreground_mask"] = cv2.cvtColor(
+                    foreground_mask, cv2.COLOR_BGR2GRAY)
                 self.images["inverted_foreground_mask"] = 1 - self.images["foreground_mask"]
 
     async def get_frame(self, session):
@@ -154,20 +163,35 @@ class FakeCam:
 
 
 def parse_args():
-    parser = ArgumentParser(description="Fake cam")
-    parser.add_argument(
-        "-p", "--no-foreground", default=False, action="store_true", help="Disable foreground image"
-    )
-    parser.add_argument("-f", "--fps", default=30, type=int, help="How many FPS to process")
-    parser.add_argument("-w", "--width", default=1280, type=int, help="Camera width")
-    parser.add_argument("-H", "--height", default=720, type=int, help="Camera height")
-    parser.add_argument("-s", "--scale-factor", default=0.5, type=float, help="Scale factor")
-    parser.add_argument("-b", "--bodypix-url", default="http://127.0.0.1:9000", help="Tensorflow BodyPix URL")
-    parser.add_argument("-B", "--background-image", default="background.jpg", help="Background image path")
-    parser.add_argument("-F", "--foreground-image", default="foreground.jpg", help="Foreground image path")
-    parser.add_argument(
-        "-M", "--foreground-mask-image", default="foreground-mask.png", help="Foreground mask image path"
-    )
+    parser = ArgumentParser(description="Faking your webcam background under \
+                            GNU/Linux. Please make sure your bodypix network \
+                            is running. For more information, please refer to: \
+                            https://github.com/fangfufu/Linux-Fake-Background-Webcam")
+    parser.add_argument("-p", "--no-foreground",
+                        default=False, action="store_true",
+                        help="Disable foreground image")
+    parser.add_argument("-f", "--fps", default=30, type=int,
+                        help="How many FPS to process")
+    parser.add_argument("-w", "--width", default=1280, type=int,
+                        help="Camera width")
+    parser.add_argument("-H", "--height", default=720, type=int,
+                        help="Camera height")
+    parser.add_argument("-s", "--scale-factor", default=0.5, type=float,
+                        help="Scale factor")
+    parser.add_argument("-b", "--bodypix-url", default="http://127.0.0.1:9000",
+                        help="Tensorflow BodyPix URL")
+    parser.add_argument("-B", "--background-image", default="background.jpg",
+                        help="Background image path, animated background is \
+                        supported.")
+    parser.add_argument("-F", "--foreground-image", default="foreground.jpg",
+                        help="Foreground image path")
+    parser.add_argument("-M", "--foreground-mask-image",
+                        default="foreground-mask.png",
+                        help="Foreground mask image path")
+    parser.add_argument("-W", "--webcam-path", default="/dev/video0",
+                        help="Webcam path")
+    parser.add_argument("-V", "--v4l2loopback-path", default="/dev/video2",
+                        help="V4l2loopback device path")
     return parser.parse_args()
 
 
@@ -193,7 +217,8 @@ def main():
         background_image=args.background_image,
         foreground_image=args.foreground_image,
         foreground_mask_image=args.foreground_mask_image,
-    )
+        webcam_path=args.webcam_path,
+        v4l2loopback_path=args.v4l2loopback_path)
     loop = asyncio.get_event_loop()
     signal.signal(signal.SIGINT, partial(sigint_handler, loop, cam))
     signal.signal(signal.SIGQUIT, partial(sigquit_handler, loop, cam))

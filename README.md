@@ -99,6 +99,42 @@ The files that you might want to replace are the followings:
 If you want to change the files above in the middle of streaming, replace them
 and press ``CTRL-C``
 
+#### fakecam.py
 Note that animated background is now support. The background image does not have 
 to be a jpeg file. For the implementation details, please refer to commit 
 [ee867be](https://github.com/fangfufu/Linux-Fake-Background-Webcam/commit/ee867be88e8fe5c9cfdd7d7a69f12ed3c3fb904c).
+
+If you are not running fakecam.py under Docker, it supports the following options:
+
+    usage: fake.py [-h] [-p] [-f FPS] [-w WIDTH] [-H HEIGHT] [-s SCALE_FACTOR]
+                [-b BODYPIX_URL] [-B BACKGROUND_IMAGE] [-F FOREGROUND_IMAGE]
+                [-M FOREGROUND_MASK_IMAGE] [-W WEBCAM_PATH]
+                [-V V4L2LOOPBACK_PATH]
+
+    Faking your webcam background under GNU/Linux. Please make sure your bodypix
+    network is running. For more information, please refer to:
+    https://github.com/fangfufu/Linux-Fake-Background-Webcam
+
+    optional arguments:
+    -h, --help            show this help message and exit
+    -p, --no-foreground   Disable foreground image
+    -f FPS, --fps FPS     How many FPS to process
+    -w WIDTH, --width WIDTH
+                            Camera width
+    -H HEIGHT, --height HEIGHT
+                            Camera height
+    -s SCALE_FACTOR, --scale-factor SCALE_FACTOR
+                            Scale factor
+    -b BODYPIX_URL, --bodypix-url BODYPIX_URL
+                            Tensorflow BodyPix URL
+    -B BACKGROUND_IMAGE, --background-image BACKGROUND_IMAGE
+                            Background image path, animated background is
+                            supported.
+    -F FOREGROUND_IMAGE, --foreground-image FOREGROUND_IMAGE
+                            Foreground image path
+    -M FOREGROUND_MASK_IMAGE, --foreground-mask-image FOREGROUND_MASK_IMAGE
+                            Foreground mask image path
+    -W WEBCAM_PATH, --webcam-path WEBCAM_PATH
+                            Webcam path
+    -V V4L2LOOPBACK_PATH, --v4l2loopback-path V4L2LOOPBACK_PATH
+                            V4l2loopback device path

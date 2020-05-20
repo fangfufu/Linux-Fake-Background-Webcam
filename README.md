@@ -37,7 +37,7 @@ I added module options for v4l2loopback by creating
 In this repository, I assume that ``/dev/video2`` is the virtual webcam, and
 ``/dev/video0`` is the physical webcam.
 
-I also created ``/etc/modules-load.d/v4l2loopback`` with the following content:
+I also created ``/etc/modules-load.d/v4l2loopback.conf`` with the following content:
     
     v4l2loopback
     

@@ -71,7 +71,7 @@ class FakeCam:
                 fy=1 / self.scale_factor, interpolation=cv2.INTER_NEAREST
             )
             mask = cv2.dilate(mask, np.ones((20, 20), np.uint8), iterations=1)
-            mask = cv2.blur(mask.astype(float), (30, 30))
+            mask = cv2.blur(mask.astype(float), (20, 20))
             return mask
 
     def shift_image(self, img, dx, dy):

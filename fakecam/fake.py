@@ -59,7 +59,8 @@ class FakeCam:
     async def _get_mask(self, frame, session):
         frame = cv2.resize(frame, (0, 0), fx=self.scale_factor,
                            fy=self.scale_factor)
-        _, data = cv2.imencode(".png", frame)
+        encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 80]
+        _, data = cv2.imencode(".jpg", frame, encode_param)
         async with session.post(
             url=self.bodypix_url, data=data.tostring(),
             headers={"Content-Type": "application/octet-stream"}

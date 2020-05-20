@@ -1,6 +1,10 @@
 const tf = require('@tensorflow/tfjs-node');
 const bodyPix = require('@tensorflow-models/body-pix');
 const http = require('http');
+const util = require('util');
+const zlib = require('zlib');
+const gzip = util.promisify(zlib.gzip);
+
 (async () => {
     const net = await bodyPix.load({
         architecture: 'MobileNetV1',
@@ -18,11 +22,12 @@ const http = require('http');
             const image = tf.node.decodeImage(Buffer.concat(chunks));
             segmentation = await net.segmentPerson(image, {
                 flipHorizontal: false,
-                internalResolution: 'medium',
+                internalResolution: 'full',
                 segmentationThreshold: 0.7,
             });
-            res.writeHead(200, { 'Content-Type': 'application/octet-stream' });
-            res.write(Buffer.from(segmentation.data));
+            zipped = await gzip(Buffer.from(segmentation.data));
+            res.writeHead(200, { 'Content-Type': 'application/octet-stream', 'Content-Encoding': 'gzip' });
+            res.write(zipped);
             res.end();
             tf.dispose(image);
         });

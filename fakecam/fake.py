@@ -38,7 +38,7 @@ class FakeCam:
         self.width = width
         self.scale_factor = scale_factor
         self.bodypix_url = bodypix_url
-        self.real_cam = cv2.VideoCapture(webcam_path)
+        self.real_cam = cv2.VideoCapture(webcam_path,cv2.CAP_V4L2)
         self._setup_real_cam_properties()
         self.fake_cam = pyfakewebcam.FakeWebcam(v4l2loopback_path, self.width,
                                                 self.height)

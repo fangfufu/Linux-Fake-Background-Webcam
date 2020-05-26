@@ -22,6 +22,7 @@ class FakeCam:
         height: int,
         scale_factor: float,
         no_foreground: bool,
+        hologram: bool,
         bodypix_url: str,
         background_image: str,
         foreground_image: str,
@@ -30,6 +31,7 @@ class FakeCam:
         v4l2loopback_path: str
     ) -> None:
         self.no_foreground = no_foreground
+        self.hologram = hologram
         self.background_image = background_image
         self.foreground_image = foreground_image
         self.foreground_mask_image = foreground_mask_image
@@ -70,8 +72,8 @@ class FakeCam:
                 mask, (0, 0), fx=1 / self.scale_factor,
                 fy=1 / self.scale_factor, interpolation=cv2.INTER_NEAREST
             )
-            mask = cv2.dilate(mask, np.ones((20, 20), np.uint8), iterations=1)
-            mask = cv2.blur(mask.astype(float), (20, 20))
+            mask = cv2.dilate(mask, np.ones((10, 10), np.uint8), iterations=1)
+            mask = cv2.blur(mask.astype(float), (30, 30))
             return mask
 
     def shift_image(self, img, dx, dy):
@@ -123,6 +125,22 @@ class FakeCam:
                     foreground_mask, cv2.COLOR_BGR2GRAY)
                 self.images["inverted_foreground_mask"] = 1 - self.images["foreground_mask"]
 
+    def hologram_effect(self, img):
+        # add a blue tint
+        holo = cv2.applyColorMap(img, cv2.COLORMAP_WINTER)
+        # add a halftone effect
+        bandLength, bandGap = 2, 3
+        for y in range(holo.shape[0]):
+            if y % (bandLength+bandGap) < bandLength:
+                holo[y,:,:] = holo[y,:,:] * np.random.uniform(0.1, 0.3)
+        # add some ghosting
+        holo_blur = cv2.addWeighted(holo, 0.2, self.shift_image(holo.copy(), 5, 5), 0.8, 0)
+        holo_blur = cv2.addWeighted(holo_blur, 0.4, self.shift_image(holo.copy(), -5, -5), 0.6, 0)
+        # combine with the original color, oversaturated
+        out = cv2.addWeighted(img, 0.5, holo_blur, 0.6, 0)
+        return out 
+
+    
     async def get_frame(self, session):
         _, frame = self.real_cam.read()
         # fetch the mask with retries (the app needs to warmup and we're lazy)
@@ -133,10 +151,13 @@ class FakeCam:
                 mask = await self._get_mask(frame, session)
             except Exception as e:
                 print(f"Mask request failed, retrying: {e}")
-                traceback.print_exc()
-
-        # composite the foreground and background
+                traceback.print_exc()     
+      
         async with self.lock:
+            if self.hologram: 
+                frame = self.hologram_effect(frame)
+
+            # composite the foreground and background
             background = next(self.images["background"])
             for c in range(frame.shape[2]):
                 frame[:, :, c] = frame[:, :, c] * mask + background[:, :, c] * (1 - mask)
@@ -192,6 +213,7 @@ def parse_args():
                         help="Webcam path")
     parser.add_argument("-V", "--v4l2loopback-path", default="/dev/video2",
                         help="V4l2loopback device path")
+    parser.add_argument("--hologram", default=False, action="store_true", help="Add a hologram effect") 
     return parser.parse_args()
 
 
@@ -213,6 +235,7 @@ def main():
         height=args.height,
         scale_factor=args.scale_factor,
         no_foreground=args.no_foreground,
+        hologram=args.hologram,
         bodypix_url=args.bodypix_url,
         background_image=args.background_image,
         foreground_image=args.foreground_image,

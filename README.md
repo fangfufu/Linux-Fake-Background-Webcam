@@ -142,6 +142,8 @@ If you are not running fakecam.py under Docker, it supports the following option
                             Webcam path
     -V V4L2LOOPBACK_PATH, --v4l2loopback-path V4L2LOOPBACK_PATH
                             V4l2loopback device path
+    --hologram              Applies "hologram" like treatment to image from webcam.
+    
 ## License
 
     Linux Fake Background Webcam

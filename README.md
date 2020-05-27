@@ -110,10 +110,10 @@ Basically you can use any video file that your OpenCV can read.
 
 If you are not running fakecam.py under Docker, it supports the following options:
 
-    usage: fake.py [-h] [-p] [-f FPS] [-w WIDTH] [-H HEIGHT] [-s SCALE_FACTOR]
                 [-b BODYPIX_URL] [-B BACKGROUND_IMAGE] [-F FOREGROUND_IMAGE]
                 [-M FOREGROUND_MASK_IMAGE] [-W WEBCAM_PATH]
-                [-V V4L2LOOPBACK_PATH]
+                [-V V4L2LOOPBACK_PATH] [--hologram]
+
 
     Faking your webcam background under GNU/Linux. Please make sure your bodypix
     network is running. For more information, please refer to:
@@ -122,7 +122,6 @@ If you are not running fakecam.py under Docker, it supports the following option
     optional arguments:
     -h, --help            show this help message and exit
     -p, --no-foreground   Disable foreground image
-    -f FPS, --fps FPS     How many FPS to process
     -w WIDTH, --width WIDTH
                             Camera width
     -H HEIGHT, --height HEIGHT
@@ -142,7 +141,7 @@ If you are not running fakecam.py under Docker, it supports the following option
                             Webcam path
     -V V4L2LOOPBACK_PATH, --v4l2loopback-path V4L2LOOPBACK_PATH
                             V4l2loopback device path
-    --hologram              Applies "hologram" like treatment to image from webcam.
+    --hologram            Add a hologram effect
     
 ## License
 

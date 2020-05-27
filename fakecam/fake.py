@@ -191,8 +191,6 @@ def parse_args():
     parser.add_argument("-p", "--no-foreground",
                         default=False, action="store_true",
                         help="Disable foreground image")
-    parser.add_argument("-f", "--fps", default=30, type=int,
-                        help="How many FPS to process")
     parser.add_argument("-w", "--width", default=1280, type=int,
                         help="Camera width")
     parser.add_argument("-H", "--height", default=720, type=int,

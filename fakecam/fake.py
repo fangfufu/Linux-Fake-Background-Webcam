@@ -205,33 +205,33 @@ def parse_args():
                             GNU/Linux. Please make sure your bodypix network \
                             is running. For more information, please refer to: \
                             https://github.com/fangfufu/Linux-Fake-Background-Webcam")
-    parser.add_argument("-p", "--no-foreground",
-                        default=False, action="store_true",
-                        help="Disable foreground image")
-    parser.add_argument("-w", "--width", default=1280, type=int,
+    parser.add_argument("-W", "--width", default=1280, type=int,
                         help="Set real webcam width")
     parser.add_argument("-H", "--height", default=720, type=int,
                         help="Set real webcam height")
-    parser.add_argument("-f", "--fps", default=30, type=int,
+    parser.add_argument("-F", "--fps", default=30, type=int,
                         help="Set real webcam FPS")
-    parser.add_argument("-s", "--scale-factor", default=0.5, type=float,
-                        help="Scale factor")
-    parser.add_argument("-b", "--bodypix-url", default="http://127.0.0.1:9000",
+    parser.add_argument("-S", "--scale-factor", default=0.5, type=float,
+                        help="Scale factor of the image sent to BodyPix network")
+    parser.add_argument("-B", "--bodypix-url", default="http://127.0.0.1:9000",
                         help="Tensorflow BodyPix URL")
-    parser.add_argument("-I", "--image-folder", default=".",
-                        help="Background and foreground images folder.")
-    parser.add_argument("-B", "--background-image", default="background.*",
+    parser.add_argument("-w", "--webcam-path", default="/dev/video0",
+                        help="Set real webcam path")
+    parser.add_argument("-v", "--v4l2loopback-path", default="/dev/video2",
+                        help="V4l2loopback device path")
+    parser.add_argument("-i", "--image-folder", default=".",
+                        help="Folder which contains foreground and background images")
+    parser.add_argument("-b", "--background-image", default="background.*",
                         help="Background image path, animated background is \
                         supported.")
-    parser.add_argument("-F", "--foreground-image", default="foreground.*",
+    parser.add_argument("--no-foreground",
+                        default=False, action="store_true",
+                        help="Disable foreground image")
+    parser.add_argument("-f", "--foreground-image", default="foreground.*",
                         help="Foreground image path")
-    parser.add_argument("-M", "--foreground-mask-image",
+    parser.add_argument("-m", "--foreground-mask-image",
                         default="foreground-mask.*",
                         help="Foreground mask image path")
-    parser.add_argument("-W", "--webcam-path", default="/dev/video0",
-                        help="Set real webcam path")
-    parser.add_argument("-V", "--v4l2loopback-path", default="/dev/video2",
-                        help="V4l2loopback device path")
     parser.add_argument("--hologram", default=False, action="store_true",
                         help="Add a hologram effect")
     return parser.parse_args()

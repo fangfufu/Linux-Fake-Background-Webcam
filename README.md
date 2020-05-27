@@ -52,6 +52,28 @@ OSError: [Errno 22] Invalid argument
 when opening the webcam from Python, please install v4l2loopback from the [github](https://github.com/umlaeute/v4l2loopback) repo, 
 as you could have an old version from your package manager.
 
+When using Ubuntu 18.04 (it may work for other versions too) to install v4l2loopback correclty follow [the instructions](https://github.com/jremmons/pyfakewebcam/issues/7#issuecomment-616617011):
+
+1. remove apt package
+    - `sudo modprobe -r v4l2loopback`
+    - `sudo apt remove v4l2loopback-dkms`
+2. install aux
+    - `sudo apt-get install linux-generic`
+    - `sudo apt install dkms`
+3. install v4l2loopback from the repository
+    - `git clone https://github.com/umlaeute/v4l2loopback.git`
+    - `cd v4l2loopback`
+    - `make`  # The other commands are not needed
+4. instal mod
+    - `sudo cp -R . /usr/src/v4l2loopback-1.1`
+    - `sudo dkms add -m v4l2loopback -v 1.1`
+    - `sudo dkms build -m v4l2loopback -v 1.1`
+    - `sudo dkms install -m v4l2loopback -v 1.1`
+5. reboot
+    - `sudo reboot`
+
+Do not forget to thank to @pedrodiamel for the guide!
+
 ## Installing with Docker
 Please refer to [DOCKER.md](DOCKER.md). The updated Docker related files were
 added by [liske](https://github.com/liske).

@@ -132,10 +132,10 @@ Basically you can use any video file that your OpenCV can read.
 
 If you are not running fakecam.py under Docker, it supports the following options:
 
-                [-b BODYPIX_URL] [-B BACKGROUND_IMAGE] [-F FOREGROUND_IMAGE]
-                [-M FOREGROUND_MASK_IMAGE] [-W WEBCAM_PATH]
-                [-V V4L2LOOPBACK_PATH] [--hologram]
-
+    usage: fake.py [-h] [-W WIDTH] [-H HEIGHT] [-F FPS] [-S SCALE_FACTOR]
+                [-B BODYPIX_URL] [-w WEBCAM_PATH] [-v V4L2LOOPBACK_PATH]
+                [-i IMAGE_FOLDER] [-b BACKGROUND_IMAGE] [--no-foreground]
+                [-f FOREGROUND_IMAGE] [-m FOREGROUND_MASK_IMAGE] [--hologram]
 
     Faking your webcam background under GNU/Linux. Please make sure your bodypix
     network is running. For more information, please refer to:
@@ -143,26 +143,29 @@ If you are not running fakecam.py under Docker, it supports the following option
 
     optional arguments:
     -h, --help            show this help message and exit
-    -p, --no-foreground   Disable foreground image
-    -w WIDTH, --width WIDTH
-                            Camera width
+    -W WIDTH, --width WIDTH
+                            Set real webcam width
     -H HEIGHT, --height HEIGHT
-                            Camera height
-    -s SCALE_FACTOR, --scale-factor SCALE_FACTOR
-                            Scale factor
-    -b BODYPIX_URL, --bodypix-url BODYPIX_URL
+                            Set real webcam height
+    -F FPS, --fps FPS     Set real webcam FPS
+    -S SCALE_FACTOR, --scale-factor SCALE_FACTOR
+                            Scale factor of the image sent to BodyPix network
+    -B BODYPIX_URL, --bodypix-url BODYPIX_URL
                             Tensorflow BodyPix URL
-    -B BACKGROUND_IMAGE, --background-image BACKGROUND_IMAGE
+    -w WEBCAM_PATH, --webcam-path WEBCAM_PATH
+                            Set real webcam path
+    -v V4L2LOOPBACK_PATH, --v4l2loopback-path V4L2LOOPBACK_PATH
+                            V4l2loopback device path
+    -i IMAGE_FOLDER, --image-folder IMAGE_FOLDER
+                            Folder which contains foreground and background images
+    -b BACKGROUND_IMAGE, --background-image BACKGROUND_IMAGE
                             Background image path, animated background is
                             supported.
-    -F FOREGROUND_IMAGE, --foreground-image FOREGROUND_IMAGE
+    --no-foreground       Disable foreground image
+    -f FOREGROUND_IMAGE, --foreground-image FOREGROUND_IMAGE
                             Foreground image path
-    -M FOREGROUND_MASK_IMAGE, --foreground-mask-image FOREGROUND_MASK_IMAGE
+    -m FOREGROUND_MASK_IMAGE, --foreground-mask-image FOREGROUND_MASK_IMAGE
                             Foreground mask image path
-    -W WEBCAM_PATH, --webcam-path WEBCAM_PATH
-                            Webcam path
-    -V V4L2LOOPBACK_PATH, --v4l2loopback-path V4L2LOOPBACK_PATH
-                            V4l2loopback device path
     --hologram            Add a hologram effect
     
 ## License

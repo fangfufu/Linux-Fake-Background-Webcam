@@ -187,9 +187,18 @@ class FakeCam:
     async def run(self):
         await self.load_images()
         async with aiohttp.ClientSession() as session:
+            t0 = time.monotonic()
+            print_fps_period = 1
+            frame_count = 0
             while True:
                 frame = await self.get_frame(session)
                 self.fake_frame(frame)
+                frame_count += 1
+                td = time.monotonic() - t0
+                if td > print_fps_period:
+                    print("FPS: {:6.2f}".format(frame_count / td), end="\r")
+                    frame_count = 0
+                    t0 = time.monotonic()
 
 def parse_args():
     parser = ArgumentParser(description="Faking your webcam background under \

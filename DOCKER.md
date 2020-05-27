@@ -2,7 +2,7 @@
 
 ## Prerequisite
 
-You need to have *docker* and *docker-compose* available.
+You need to have *docker* and *docker-compose* available and the *correct version of v4l2loopback* installed.
 
 ## Configuration 
 
@@ -31,3 +31,4 @@ You should create a copy of `docker-compose.yml` and change to meet your needs:
 ## Usage
  - Run and initial build containers: ``docker-compose up`` (or ``docker-compose up -d``)
  - Stop and remove containers: ``docker-compose down``
+ - Note: *Ctrl-C* is currently stops the containers instead of changing images

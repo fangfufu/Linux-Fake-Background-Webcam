@@ -12,7 +12,16 @@ import cv2
 import numpy as np
 import pyfakewebcam
 import requests
+import os
+import fnmatch
+import time
 
+def findFile(pattern, path):
+    for root, _, files in os.walk(path):
+        for name in files:
+            if fnmatch.fnmatch(name, pattern):
+                return os.path.join(root, name)
+    return None
 
 class FakeCam:
     def __init__(
@@ -21,7 +30,7 @@ class FakeCam:
         width: int,
         height: int,
         scale_factor: float,
-        no_foreground: bool,
+        use_foreground: bool,
         hologram: bool,
         bodypix_url: str,
         background_image: str,
@@ -30,7 +39,7 @@ class FakeCam:
         webcam_path: str,
         v4l2loopback_path: str
     ) -> None:
-        self.no_foreground = no_foreground
+        self.use_foreground = use_foreground
         self.hologram = hologram
         self.background_image = background_image
         self.foreground_image = foreground_image
@@ -111,7 +120,7 @@ class FakeCam:
                 background = iter_frames()
             self.images["background"] = background
 
-            if not self.no_foreground:
+            if self.use_foreground and self.foreground_image is not None:
                 foreground = cv2.imread(self.foreground_image)
                 self.images["foreground"] = cv2.resize(foreground,
                                                        (self.width, self.height))
@@ -162,7 +171,7 @@ class FakeCam:
             for c in range(frame.shape[2]):
                 frame[:, :, c] = frame[:, :, c] * mask + background[:, :, c] * (1 - mask)
 
-        if not self.no_foreground:
+        if self.use_foreground and self.foreground_image is not None:
             async with self.lock:
                 for c in range(frame.shape[2]):
                     frame[:, :, c] = (
@@ -182,7 +191,6 @@ class FakeCam:
                 frame = await self.get_frame(session)
                 self.fake_frame(frame)
 
-
 def parse_args():
     parser = ArgumentParser(description="Faking your webcam background under \
                             GNU/Linux. Please make sure your bodypix network \
@@ -201,13 +209,15 @@ def parse_args():
                         help="Scale factor")
     parser.add_argument("-b", "--bodypix-url", default="http://127.0.0.1:9000",
                         help="Tensorflow BodyPix URL")
-    parser.add_argument("-B", "--background-image", default="background.jpg",
+    parser.add_argument("-I", "--image-folder", default=".",
+                        help="Background and foreground images folder.")
+    parser.add_argument("-B", "--background-image", default="background.*",
                         help="Background image path, animated background is \
                         supported.")
-    parser.add_argument("-F", "--foreground-image", default="foreground.jpg",
+    parser.add_argument("-F", "--foreground-image", default="foreground.*",
                         help="Foreground image path")
     parser.add_argument("-M", "--foreground-mask-image",
-                        default="foreground-mask.png",
+                        default="foreground-mask.*",
                         help="Foreground mask image path")
     parser.add_argument("-W", "--webcam-path", default="/dev/video0",
                         help="Webcam path")
@@ -234,12 +244,12 @@ def main():
         width=args.width,
         height=args.height,
         scale_factor=args.scale_factor,
-        no_foreground=args.no_foreground,
+        use_foreground=not args.no_foreground,
         hologram=args.hologram,
         bodypix_url=args.bodypix_url,
-        background_image=args.background_image,
-        foreground_image=args.foreground_image,
-        foreground_mask_image=args.foreground_mask_image,
+        background_image=findFile(args.background_image, args.image_folder),
+        foreground_image=findFile(args.foreground_image, args.image_folder),
+        foreground_mask_image=findFile(args.foreground_mask_image, args.image_folder),
         webcam_path=args.webcam_path,
         v4l2loopback_path=args.v4l2loopback_path)
     loop = asyncio.get_event_loop()

@@ -209,9 +209,11 @@ def parse_args():
                         default=False, action="store_true",
                         help="Disable foreground image")
     parser.add_argument("-w", "--width", default=1280, type=int,
-                        help="Camera width")
+                        help="Set real webcam width")
     parser.add_argument("-H", "--height", default=720, type=int,
-                        help="Camera height")
+                        help="Set real webcam height")
+    parser.add_argument("-f", "--fps", default=30, type=int,
+                        help="Set real webcam FPS")
     parser.add_argument("-s", "--scale-factor", default=0.5, type=float,
                         help="Scale factor")
     parser.add_argument("-b", "--bodypix-url", default="http://127.0.0.1:9000",
@@ -227,10 +229,11 @@ def parse_args():
                         default="foreground-mask.*",
                         help="Foreground mask image path")
     parser.add_argument("-W", "--webcam-path", default="/dev/video0",
-                        help="Webcam path")
+                        help="Set real webcam path")
     parser.add_argument("-V", "--v4l2loopback-path", default="/dev/video2",
                         help="V4l2loopback device path")
-    parser.add_argument("--hologram", default=False, action="store_true", help="Add a hologram effect") 
+    parser.add_argument("--hologram", default=False, action="store_true",
+                        help="Add a hologram effect")
     return parser.parse_args()
 
 

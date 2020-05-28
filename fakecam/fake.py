@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+ 
 import asyncio
 import itertools
 import signal
@@ -15,6 +17,7 @@ import requests
 import os
 import fnmatch
 import time
+import threading
 
 def findFile(pattern, path):
     for root, _, files in os.walk(path):
@@ -22,6 +25,56 @@ def findFile(pattern, path):
             if fnmatch.fnmatch(name, pattern):
                 return os.path.join(root, name)
     return None
+
+class RealCam:
+    def __init__(self, src, frame_width, frame_height, frame_rate):
+        self.cam = cv2.VideoCapture(src, cv2.CAP_V4L2)
+        self.stopped = False
+        self.frame = None
+        self.lock = threading.Lock()
+        self._set_prop(cv2.CAP_PROP_FRAME_WIDTH, frame_width)
+        self._set_prop(cv2.CAP_PROP_FRAME_HEIGHT, frame_height)
+        self._set_prop(cv2.CAP_PROP_FPS, frame_rate)
+
+    def _set_prop(self, prop, value):
+        if self.cam.set(prop, value):
+            if value == self.cam.get(prop):
+                return True
+
+        print("Cannot set camera property {} to {}, used value: {}".format(prop, value, self.cam.get(prop)))
+        return False
+
+    def get_frame_width(self):
+        return int(self.cam.get(cv2.CAP_PROP_FRAME_WIDTH))
+
+    def get_frame_height(self):
+        return int(self.cam.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    def get_frame_rate(self):
+        return int(self.cam.get(cv2.CAP_PROP_FPS))
+
+    def start(self):
+        self.thread = threading.Thread(target=self.update)
+        self.thread.start()
+        return self
+
+    def update(self):
+        while not self.stopped:
+            grabbed, frame = self.cam.read()
+            if grabbed:
+                with self.lock:
+                    self.frame = frame.copy()
+
+    def read(self):
+        with self.lock:
+            if self.frame is None:
+               return None
+            return self.frame.copy()
+
+    def stop(self):
+        self.stopped = True
+        self.thread.join()
+
 
 class FakeCam:
     def __init__(
@@ -44,28 +97,19 @@ class FakeCam:
         self.background_image = background_image
         self.foreground_image = foreground_image
         self.foreground_mask_image = foreground_mask_image
-        self.fps = fps
-        self.height = height
-        self.width = width
         self.scale_factor = scale_factor
         self.bodypix_url = bodypix_url
-        self.real_cam = cv2.VideoCapture(webcam_path,cv2.CAP_V4L2)
-        self._setup_real_cam_properties()
+        self.real_cam = RealCam(webcam_path, width, height, fps)
+        # In case the real webcam does not support the requested mode.
+        self.width = self.real_cam.get_frame_width()
+        self.height = self.real_cam.get_frame_height()
         self.fake_cam = pyfakewebcam.FakeWebcam(v4l2loopback_path, self.width,
                                                 self.height)
         self.foreground_mask = None
         self.inverted_foreground_mask = None
         self.session = requests.Session()
         self.images: Dict[str, Any] = {}
-        self.lock = asyncio.Lock()
-
-    def _setup_real_cam_properties(self):
-        self.real_cam.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
-        self.real_cam.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
-        self.real_cam.set(cv2.CAP_PROP_FPS, self.fps)
-        # In case the real webcam does not support the requested mode.
-        self.height = int(self.real_cam.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        self.width = int(self.real_cam.get(cv2.CAP_PROP_FRAME_WIDTH))
+        self.image_lock = asyncio.Lock()
 
     async def _get_mask(self, frame, session):
         frame = cv2.resize(frame, (0, 0), fx=self.scale_factor,
@@ -99,7 +143,7 @@ class FakeCam:
         return img
 
     async def load_images(self):
-        async with self.lock:
+        async with self.image_lock:
             self.images: Dict[str, Any] = {}
 
             background = cv2.imread(self.background_image)
@@ -150,8 +194,7 @@ class FakeCam:
         return out 
 
     
-    async def get_frame(self, session):
-        _, frame = self.real_cam.read()
+    async def mask_frame(self, session, frame):
         # fetch the mask with retries (the app needs to warmup and we're lazy)
         # e v e n t u a l l y c o n s i s t e n t
         mask = None
@@ -162,37 +205,44 @@ class FakeCam:
                 print(f"Mask request failed, retrying: {e}")
                 traceback.print_exc()     
       
-        async with self.lock:
-            if self.hologram: 
-                frame = self.hologram_effect(frame)
+        if self.hologram: 
+            frame = self.hologram_effect(frame)
 
-            # composite the foreground and background
+        # composite the foreground and background
+        async with self.image_lock:
             background = next(self.images["background"])
             for c in range(frame.shape[2]):
                 frame[:, :, c] = frame[:, :, c] * mask + background[:, :, c] * (1 - mask)
 
-        if self.use_foreground and self.foreground_image is not None:
-            async with self.lock:
+            if self.use_foreground and self.foreground_image is not None:
                 for c in range(frame.shape[2]):
                     frame[:, :, c] = (
                         frame[:, :, c] * self.images["inverted_foreground_mask"]
                         + self.images["foreground"][:, :, c] * self.images["foreground_mask"]
-                    )
+                        )
 
         return frame
 
-    def fake_frame(self, frame):
+    def put_frame(self, frame):
         self.fake_cam.schedule_frame(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+
+    def stop(self):
+        self.real_cam.stop()
 
     async def run(self):
         await self.load_images()
+        self.real_cam.start()
         async with aiohttp.ClientSession() as session:
             t0 = time.monotonic()
             print_fps_period = 1
             frame_count = 0
             while True:
-                frame = await self.get_frame(session)
-                self.fake_frame(frame)
+                frame = self.real_cam.read()
+                if frame is None:
+                    await asyncio.sleep(0.1)
+                    continue
+                await self.mask_frame(session, frame)
+                self.put_frame(frame)
                 frame_count += 1
                 td = time.monotonic() - t0
                 if td > print_fps_period:
@@ -243,6 +293,7 @@ def sigint_handler(loop, cam, signal, frame):
 
 def sigquit_handler(loop, cam, signal, frame):
     print("Killing fake cam process")
+    cam.stop()
     sys.exit(0)
 
 

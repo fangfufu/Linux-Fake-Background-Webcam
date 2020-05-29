@@ -134,8 +134,9 @@ If you are not running fakecam.py under Docker, it supports the following option
 
     usage: fake.py [-h] [-W WIDTH] [-H HEIGHT] [-F FPS] [-S SCALE_FACTOR]
                 [-B BODYPIX_URL] [-w WEBCAM_PATH] [-v V4L2LOOPBACK_PATH]
-                [-i IMAGE_FOLDER] [-b BACKGROUND_IMAGE] [--no-foreground]
-                [-f FOREGROUND_IMAGE] [-m FOREGROUND_MASK_IMAGE] [--hologram]
+                [-i IMAGE_FOLDER] [-b BACKGROUND_IMAGE] [--tile-background]
+                [--no-foreground] [-f FOREGROUND_IMAGE]
+                [-m FOREGROUND_MASK_IMAGE] [--hologram]
 
     Faking your webcam background under GNU/Linux. Please make sure your bodypix
     network is running. For more information, please refer to:
@@ -161,6 +162,7 @@ If you are not running fakecam.py under Docker, it supports the following option
     -b BACKGROUND_IMAGE, --background-image BACKGROUND_IMAGE
                             Background image path, animated background is
                             supported.
+    --tile-background     Tile the background image
     --no-foreground       Disable foreground image
     -f FOREGROUND_IMAGE, --foreground-image FOREGROUND_IMAGE
                             Foreground image path

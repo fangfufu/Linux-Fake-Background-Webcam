@@ -85,6 +85,7 @@ class FakeCam:
         scale_factor: float,
         use_foreground: bool,
         hologram: bool,
+        tiling: bool,
         bodypix_url: str,
         background_image: str,
         foreground_image: str,
@@ -94,6 +95,7 @@ class FakeCam:
     ) -> None:
         self.use_foreground = use_foreground
         self.hologram = hologram
+        self.tiling = tiling
         self.background_image = background_image
         self.foreground_image = foreground_image
         self.foreground_mask_image = foreground_mask_image
@@ -148,14 +150,17 @@ class FakeCam:
 
             background = cv2.imread(self.background_image)
             if background is not None:
-                sizey, sizex = background.shape[0], background.shape[1]
-                if sizex > self.width and sizey > self.height:
+                if not self.tiling:
                     background = cv2.resize(background, (self.width, self.height))
                 else:
-                    repx = (self.width - 1) // sizex + 1
-                    repy = (self.height - 1) // sizey + 1
-                    background = np.tile(background,(repy, repx, 1))
-                    background = background[0:self.height, 0:self.width]
+                    sizey, sizex = background.shape[0], background.shape[1]
+                    if sizex > self.width and sizey > self.height:
+                        background = cv2.resize(background, (self.width, self.height))
+                    else:
+                        repx = (self.width - 1) // sizex + 1
+                        repy = (self.height - 1) // sizey + 1
+                        background = np.tile(background,(repy, repx, 1))
+                        background = background[0:self.height, 0:self.width]
                 background = itertools.repeat(background)
             else:
                 background_video = cv2.VideoCapture(self.background_image)
@@ -281,15 +286,16 @@ def parse_args():
     parser.add_argument("-b", "--background-image", default="background.*",
                         help="Background image path, animated background is \
                         supported.")
-    parser.add_argument("--no-foreground",
-                        default=False, action="store_true",
+    parser.add_argument("--tile-background", action="store_true",
+                        help="Tile the background image")
+    parser.add_argument("--no-foreground", action="store_true",
                         help="Disable foreground image")
     parser.add_argument("-f", "--foreground-image", default="foreground.*",
                         help="Foreground image path")
     parser.add_argument("-m", "--foreground-mask-image",
                         default="foreground-mask.*",
                         help="Foreground mask image path")
-    parser.add_argument("--hologram", default=False, action="store_true",
+    parser.add_argument("--hologram", action="store_true",
                         help="Add a hologram effect")
     return parser.parse_args()
 
@@ -314,6 +320,7 @@ def main():
         scale_factor=args.scale_factor,
         use_foreground=not args.no_foreground,
         hologram=args.hologram,
+        tiling=args.tile_background,
         bodypix_url=args.bodypix_url,
         background_image=findFile(args.background_image, args.image_folder),
         foreground_image=findFile(args.foreground_image, args.image_folder),

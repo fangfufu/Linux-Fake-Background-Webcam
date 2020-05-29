@@ -148,7 +148,14 @@ class FakeCam:
 
             background = cv2.imread(self.background_image)
             if background is not None:
-                background = cv2.resize(background, (self.width, self.height))
+                sizey, sizex = background.shape[0], background.shape[1]
+                if sizex > self.width and sizey > self.height:
+                    background = cv2.resize(background, (self.width, self.height))
+                else:
+                    repx = (self.width - 1) // sizex + 1
+                    repy = (self.height - 1) // sizey + 1
+                    background = np.tile(background,(repy, repx, 1))
+                    background = background[0:self.height, 0:self.width]
                 background = itertools.repeat(background)
             else:
                 background_video = cv2.VideoCapture(self.background_image)

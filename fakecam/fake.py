@@ -164,17 +164,24 @@ class FakeCam:
                 background = itertools.repeat(background)
             else:
                 background_video = cv2.VideoCapture(self.background_image)
-                def iter_frames():
-                    while True:
+                self.bg_video_fps = background_video.get(cv2.CAP_PROP_FPS)
+                # Initiate current fps to background video fps
+                self.current_fps = self.bg_video_fps
+                def read_frame():
                         ret, frame = background_video.read()
                         if not ret:
                             background_video.set(cv2.CAP_PROP_POS_FRAMES, 0)
                             ret, frame = background_video.read()
                             assert ret, 'cannot read frame %r' % self.background_image
                         frame = cv2.resize(frame, (self.width, self.height))
+                        return frame
+                def next_frame():
+                    while True:
+                        self.bg_video_adv_rate = round(self.bg_video_fps/self.current_fps)
+                        for i in range(self.bg_video_adv_rate):
+                            frame = read_frame();
                         yield frame
-                background = iter_frames()
-            self.images["background"] = background
+            self.images["background"] = next_frame()
 
             if self.use_foreground and self.foreground_image is not None:
                 foreground = cv2.imread(self.foreground_image)
@@ -258,7 +265,8 @@ class FakeCam:
                 frame_count += 1
                 td = time.monotonic() - t0
                 if td > print_fps_period:
-                    print("FPS: {:6.2f}".format(frame_count / td), end="\r")
+                    self.current_fps = frame_count / td
+                    print("FPS: {:6.2f}".format(self.current_fps), end="\r")
                     frame_count = 0
                     t0 = time.monotonic()
 

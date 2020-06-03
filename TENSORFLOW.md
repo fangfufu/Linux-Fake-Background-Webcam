@@ -3,6 +3,10 @@ You might want to compile your own Tensorflow C library to make bodypix network
 run faster. Tensorflow.js uses the Tensorflow C library. If you want to compile
 your own Tensorflow C library, please following the steps described below. 
 
+Please do note that compilation takes a **LONG** time, on Intel i7-4900MQ, it
+took 5588.833s to compile the library. My system has 16GB RAM, and the build
+system managed to hit the swap partition. 
+
 Install Go, if you are on Debian Buster, you can type in the following:
 
     sudo apt-get install golang

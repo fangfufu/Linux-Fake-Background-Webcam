@@ -53,6 +53,6 @@ if __name__ == "__main__":
     camera_w, camera_h = 1280, 720
     writer = AkvCameraWriter("/dev/video3", camera_w, camera_h)
     image = cv2.imread("background.jpg")
-    iamge = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     while True:
         writer.schedule_frame(image)

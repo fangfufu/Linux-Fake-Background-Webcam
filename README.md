@@ -151,10 +151,8 @@ If you want to change the files above in the middle of streaming, replace them
 and press ``CTRL-C``
 
 #### fakecam.py
-Note that animated background is now support. The background image does not have 
-to be a jpeg file. For the implementation details, please refer to commit 
-[ee867be](https://github.com/fangfufu/Linux-Fake-Background-Webcam/commit/ee867be88e8fe5c9cfdd7d7a69f12ed3c3fb904c).
-Basically you can use any video file that your OpenCV can read. 
+Note that animated background is now supported. You can use any video file that 
+can be read by OpenCV. 
 
 If you are not running fakecam.py under Docker, it supports the following options:
 

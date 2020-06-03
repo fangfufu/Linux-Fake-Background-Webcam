@@ -19,6 +19,8 @@ import fnmatch
 import time
 import threading
 
+from akvcam import AkvCameraWriter
+
 def findFile(pattern, path):
     for root, _, files in os.walk(path):
         for name in files:
@@ -91,7 +93,8 @@ class FakeCam:
         foreground_image: str,
         foreground_mask_image: str,
         webcam_path: str,
-        v4l2loopback_path: str
+        v4l2loopback_path: str,
+        use_akvcam: bool
     ) -> None:
         self.use_foreground = use_foreground
         self.hologram = hologram
@@ -105,8 +108,10 @@ class FakeCam:
         # In case the real webcam does not support the requested mode.
         self.width = self.real_cam.get_frame_width()
         self.height = self.real_cam.get_frame_height()
-        self.fake_cam = pyfakewebcam.FakeWebcam(v4l2loopback_path, self.width,
-                                                self.height)
+        if not use_akvcam:
+            self.fake_cam = pyfakewebcam.FakeWebcam(v4l2loopback_path, self.width, self.height)
+        else:
+            self.fake_cam = AkvCameraWriter(v4l2loopback_path, self.width, self.height)
         self.foreground_mask = None
         self.inverted_foreground_mask = None
         self.session = requests.Session()
@@ -291,6 +296,8 @@ def parse_args():
                         help="Set real webcam path")
     parser.add_argument("-v", "--v4l2loopback-path", default="/dev/video2",
                         help="V4l2loopback device path")
+    parser.add_argument("--akvcam", action="store_true",
+                        help="Use an akvcam device rather than a v4l2loopback device")
     parser.add_argument("-i", "--image-folder", default=".",
                         help="Folder which contains foreground and background images")
     parser.add_argument("-b", "--background-image", default="background.*",
@@ -336,7 +343,8 @@ def main():
         foreground_image=findFile(args.foreground_image, args.image_folder),
         foreground_mask_image=findFile(args.foreground_mask_image, args.image_folder),
         webcam_path=args.webcam_path,
-        v4l2loopback_path=args.v4l2loopback_path)
+        v4l2loopback_path=args.v4l2loopback_path,
+        use_akvcam=args.akvcam)
     loop = asyncio.get_event_loop()
     signal.signal(signal.SIGINT, partial(sigint_handler, loop, cam))
     signal.signal(signal.SIGQUIT, partial(sigquit_handler, loop, cam))

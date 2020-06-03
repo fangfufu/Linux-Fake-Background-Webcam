@@ -108,6 +108,7 @@ class FakeCam:
         # In case the real webcam does not support the requested mode.
         self.width = self.real_cam.get_frame_width()
         self.height = self.real_cam.get_frame_height()
+        self.use_akvcam = use_akvcam
         if not use_akvcam:
             self.fake_cam = pyfakewebcam.FakeWebcam(v4l2loopback_path, self.width, self.height)
         else:
@@ -254,6 +255,8 @@ class FakeCam:
 
     def stop(self):
         self.real_cam.stop()
+        if self.use_akvcam:
+            self.fake_cam.__del__()
 
     async def run(self):
         await self.load_images()

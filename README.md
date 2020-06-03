@@ -100,10 +100,6 @@ added the ``rw`` attributes to do the virtual camera devices. If you already
 have already configured akvcam via webcamoid, you need to modify the 
 configuration files yourself. 
 
-Please note that if you use Akvcam, ``fake.py`` hangs when you try to exit the 
-script, so you have to press ``Ctrl + \`` twice to terminate the script. Due to 
-this bug, please avoid using Akvcam with Docker.
-
 ## Installing with Docker
 Please refer to [DOCKER.md](DOCKER.md). The updated Docker related files were
 added by [liske](https://github.com/liske).
@@ -111,10 +107,6 @@ added by [liske](https://github.com/liske).
 Using Docker is unnecessary. However it makes starting up and shutting down
 the virtual webcam very easy and convenient. The only downside is that you
 lose the ability to change background and foreground images on the fly.
-
-Please do not use the Docker version, if you are using Akvcam, as Akvcam driver
-seems to hang when exiting. This may prevent Docker containers from shutting
-down properly. 
 
 ## Installing without Docker
 Please also make sure that your TCP port ``127.0.0.1:9000`` is free, as we will

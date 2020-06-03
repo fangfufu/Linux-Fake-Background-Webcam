@@ -9,10 +9,15 @@ RUN apt-get update && \
       python3-requests \
       && rm -rf /var/cache/apt/* /var/lib/apt/lists/*
 
-RUN pip3 install --no-cache-dir pyfakewebcam aiohttp
-
 WORKDIR /src
 
-COPY foreground.jpg foreground-mask.png background.jpg fake.py /src/
+COPY foreground.jpg \
+    foreground-mask.png \
+    background.jpg \
+    fake.py \
+    requirements.txt \
+    /src/
+
+RUN pip3 install --no-cache-dir -r requirements.txt
 
 ENTRYPOINT python3 -u fake.py

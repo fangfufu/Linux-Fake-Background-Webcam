@@ -181,7 +181,9 @@ class FakeCam:
                         for i in range(self.bg_video_adv_rate):
                             frame = read_frame();
                         yield frame
-            self.images["background"] = next_frame()
+                background = next_frame()
+
+            self.images["background"] = background
 
             if self.use_foreground and self.foreground_image is not None:
                 foreground = cv2.imread(self.foreground_image)

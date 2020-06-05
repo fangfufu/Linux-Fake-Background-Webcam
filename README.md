@@ -206,7 +206,7 @@ If you are not running fakecam.py under Docker, it supports the following option
     --hologram            Add a hologram effect
 
 ### bodypix/app.js
-If under/over-segmentation occurs, you can tweak ``segmentationThreshold``e. To
+If under/over-segmentation occurs, you can tweak ``segmentationThreshold``. To
 make the network run faster, you can change ``internalResolution``, however this
 will reduce segmentation accuracy.
 

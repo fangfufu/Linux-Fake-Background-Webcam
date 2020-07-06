@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
- 
+
 import asyncio
 import itertools
 import signal
@@ -14,6 +14,7 @@ import cv2
 import numpy as np
 import pyfakewebcam
 import requests
+import requests_unixsocket
 import os
 import fnmatch
 import time
@@ -89,6 +90,7 @@ class FakeCam:
         hologram: bool,
         tiling: bool,
         bodypix_url: str,
+        socket: str,
         background_image: str,
         foreground_image: str,
         foreground_mask_image: str,
@@ -103,7 +105,6 @@ class FakeCam:
         self.foreground_image = foreground_image
         self.foreground_mask_image = foreground_mask_image
         self.scale_factor = scale_factor
-        self.bodypix_url = bodypix_url
         self.real_cam = RealCam(webcam_path, width, height, fps)
         # In case the real webcam does not support the requested mode.
         self.width = self.real_cam.get_frame_width()
@@ -116,6 +117,16 @@ class FakeCam:
         self.foreground_mask = None
         self.inverted_foreground_mask = None
         self.session = requests.Session()
+        if bodypix_url.startswith('/'):
+            print("Looks like you want to use a unix socket")
+            # self.session = requests_unixsocket.Session()
+            self.bodypix_url = "http+unix:/" + bodypix_url
+            self.socket = bodypix_url
+            requests_unixsocket.monkeypatch()
+        else:
+            self.bodypix_url = bodypix_url
+            self.socket = ""
+            # self.session = requests.Session()
         self.images: Dict[str, Any] = {}
         self.image_lock = asyncio.Lock()
 
@@ -123,6 +134,7 @@ class FakeCam:
         frame = cv2.resize(frame, (0, 0), fx=self.scale_factor,
                            fy=self.scale_factor)
         _, data = cv2.imencode(".png", frame)
+        print("Posting to " + self.bodypix_url)
         async with session.post(
             url=self.bodypix_url, data=data.tostring(),
             headers={"Content-Type": "application/octet-stream"}
@@ -218,9 +230,9 @@ class FakeCam:
         holo_blur = cv2.addWeighted(holo_blur, 0.4, self.shift_image(holo.copy(), -5, -5), 0.6, 0)
         # combine with the original color, oversaturated
         out = cv2.addWeighted(img, 0.5, holo_blur, 0.6, 0)
-        return out 
+        return out
 
-    
+
     async def mask_frame(self, session, frame):
         # fetch the mask with retries (the app needs to warmup and we're lazy)
         # e v e n t u a l l y c o n s i s t e n t
@@ -230,9 +242,9 @@ class FakeCam:
                 mask = await self._get_mask(frame, session)
             except Exception as e:
                 print(f"Mask request failed, retrying: {e}")
-                traceback.print_exc()     
-      
-        if self.hologram: 
+                traceback.print_exc()
+
+        if self.hologram:
             frame = self.hologram_effect(frame)
 
         # composite the foreground and background
@@ -261,7 +273,11 @@ class FakeCam:
     async def run(self):
         await self.load_images()
         self.real_cam.start()
-        async with aiohttp.ClientSession() as session:
+        if self.socket != "":
+            conn = aiohttp.UnixConnector(path=self.socket)
+        else:
+            conn = None
+        async with aiohttp.ClientSession(connector=conn) as session:
             t0 = time.monotonic()
             print_fps_period = 1
             frame_count = 0
@@ -342,6 +358,7 @@ def main():
         hologram=args.hologram,
         tiling=args.tile_background,
         bodypix_url=args.bodypix_url,
+        socket="",
         background_image=findFile(args.background_image, args.image_folder),
         foreground_image=findFile(args.foreground_image, args.image_folder),
         foreground_mask_image=findFile(args.foreground_mask_image, args.image_folder),

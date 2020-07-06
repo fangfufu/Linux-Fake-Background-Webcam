@@ -16,8 +16,8 @@ tidied up his scripts, and provide a turn-key solution for creating a virtual
 webcam with background replacement and additionally foreground object placement,
 e.g. a podium.
 
-Rather than using GPU for acceleration as described by the original blog post,
-this version is CPU-only to avoid all the unnecessary complexities. By
+Unlike the original blog post this can work with CPU-only. It checks for the presence
+of `/dev/nvidia0` to determine if there is a GPU present. By
 downscaling the image sent to bodypix neural network, and upscaling the
 received mask, this whole setup runs sufficiently fast under Intel i7-4900MQ.
 
@@ -141,6 +141,8 @@ lose the ability to change background and foreground images on the fly.
 Assuming you are not using the Docker version, please also make sure that your
 TCP port ``127.0.0.1:9000`` is free, as we will be using it.
 
+You can change the port by setting the environment variable PORT. If you set a path, it will use a UNIX Socket instead.
+
 You need to open two terminal windows. In one terminal window, do the following:
 
     cd bodypix
@@ -186,7 +188,7 @@ If you are not running fakecam.py under Docker, it supports the following option
     -S SCALE_FACTOR, --scale-factor SCALE_FACTOR
                             Scale factor of the image sent to BodyPix network
     -B BODYPIX_URL, --bodypix-url BODYPIX_URL
-                            Tensorflow BodyPix URL
+                            Tensorflow BodyPix URL (or path to UNIX socket)
     -w WEBCAM_PATH, --webcam-path WEBCAM_PATH
                             Set real webcam path
     -v V4L2LOOPBACK_PATH, --v4l2loopback-path V4L2LOOPBACK_PATH
@@ -215,7 +217,7 @@ Tensorflow.js uses Tensorflow C library. The default version shipped with
 Tensorflow.js is most likely not optimised for your CPU. For me, it gives me
 warnings that it was not compiled ``AVX2`` and ``FMA`` instructions. Compiling
 a version of Tensorflow C library that is optimised for your CPU will improve
-the performance. For me, it improved the framerate. 
+the performance. For me, it improved the framerate.
 
 In order to compile your own Tensorflow C library, please follow the instruction
 at [TENSORFLOW.md](TENSORFLOW.md)

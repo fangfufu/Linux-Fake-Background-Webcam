@@ -1,4 +1,7 @@
-const tf = require('@tensorflow/tfjs-node');
+
+const PORT = process.env.PORT || 9000;
+const tf = tensorflow();
+
 const bodyPix = require('@tensorflow-models/body-pix');
 const http = require('http');
 (async () => {
@@ -27,5 +30,18 @@ const http = require('http');
             tf.dispose(image);
         });
     });
-    server.listen(9000);
+    server.listen(PORT);
 })();
+
+
+function tensorflow() {
+    const GPU = process.env.GPU || "/dev/nvidia0";
+    const fs = require('fs')
+    if (fs.existsSync(GPU)) {
+        console.log('Found a GPU at %s', GPU);
+        return require('@tensorflow/tfjs-node-gpu');
+    } else {
+        console.log('No GPU found at %s, using CPU', GPU);
+        return require('@tensorflow/tfjs-node');
+    }
+}

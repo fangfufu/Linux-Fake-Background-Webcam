@@ -11,15 +11,15 @@ services:
         build:
             context: ./fakecam
         read_only: true
-        # volumes:
-        #   - /path/to/background.jpg:/src/background.jpg:ro
+        volumes:
+          - /home/pczarkowski/Pictures/bg.jpg:/src/background.jpg:ro
         #   - /path/to/foreground.jpg:/src/foreground.jpg:ro
         #   - /path/to/foreground-mask.png:/src/foreground-mask.png:ro
         devices:
             # input (webcam)
-            - /dev/video0:/dev/video0
+            - /dev/video3:/dev/video0
             # output (virtual webcam)
-            - /dev/video2:/dev/video2
+            - /dev/video0:/dev/video2
         depends_on:
             - bodypix
-        entrypoint: [ 'python3', '-u', 'fake.py', '-B', 'http://bodypix:9000/']
+        entrypoint: [ 'python3', '-u', 'fake.py', '-B', 'http://bodypix:9000/', "--no-foreground"]

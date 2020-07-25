@@ -134,7 +134,7 @@ class FakeCam:
         frame = cv2.resize(frame, (0, 0), fx=self.scale_factor,
                            fy=self.scale_factor)
         _, data = cv2.imencode(".png", frame)
-        print("Posting to " + self.bodypix_url)
+        #print("Posting to " + self.bodypix_url)
         async with session.post(
             url=self.bodypix_url, data=data.tostring(),
             headers={"Content-Type": "application/octet-stream"}

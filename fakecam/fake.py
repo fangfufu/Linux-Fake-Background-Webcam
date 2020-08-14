@@ -286,7 +286,7 @@ class FakeCam:
                 if frame is None:
                     await asyncio.sleep(0.1)
                     continue
-                await self.mask_frame(session, frame)
+                frame = await self.mask_frame(session, frame)
                 self.put_frame(frame)
                 frame_count += 1
                 td = time.monotonic() - t0

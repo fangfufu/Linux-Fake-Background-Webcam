@@ -335,7 +335,7 @@ def parse_args():
     parser.add_argument("--no-background", action="store_true",
                         help="Disable background image, blurry background")
     parser.add_argument("--background-blur", default="25", type=int,
-                        help="Set blur level for background")
+                        help="Set background blur level")
     parser.add_argument("--no-foreground", action="store_true",
                         help="Disable foreground image")
     parser.add_argument("-f", "--foreground-image", default="foreground.*",

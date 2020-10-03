@@ -86,6 +86,8 @@ class FakeCam:
         width: int,
         height: int,
         scale_factor: float,
+        no_background: bool,
+        background_blur: int,
         use_foreground: bool,
         hologram: bool,
         tiling: bool,
@@ -98,9 +100,11 @@ class FakeCam:
         v4l2loopback_path: str,
         use_akvcam: bool
     ) -> None:
+        self.no_background = no_background
         self.use_foreground = use_foreground
         self.hologram = hologram
         self.tiling = tiling
+        self.background_blur = background_blur
         self.background_image = background_image
         self.foreground_image = foreground_image
         self.foreground_mask_image = foreground_mask_image
@@ -221,7 +225,7 @@ class FakeCam:
         # add a blue tint
         holo = cv2.applyColorMap(img, cv2.COLORMAP_WINTER)
         # add a halftone effect
-        bandLength, bandGap = 2, 3
+        bandLength, bandGap = 3, 4
         for y in range(holo.shape[0]):
             if y % (bandLength+bandGap) < bandLength:
                 holo[y,:,:] = holo[y,:,:] * np.random.uniform(0.1, 0.3)
@@ -244,14 +248,18 @@ class FakeCam:
                 print(f"Mask request failed, retrying: {e}")
                 traceback.print_exc()
 
+        foreground_frame = background_frame = frame
         if self.hologram:
-            frame = self.hologram_effect(frame)
+            foreground_frame = self.hologram_effect(foreground_frame)
+
+        background_frame = cv2.blur(frame, (self.background_blur, self.background_blur), cv2.BORDER_DEFAULT)
 
         # composite the foreground and background
         async with self.image_lock:
-            background = next(self.images["background"])
+            if self.no_background is False:
+                background_frame = next(self.images["background"])
             for c in range(frame.shape[2]):
-                frame[:, :, c] = frame[:, :, c] * mask + background[:, :, c] * (1 - mask)
+                frame[:, :, c] = foreground_frame[:, :, c] * mask + background_frame[:, :, c] * (1 - mask)
 
             if self.use_foreground and self.foreground_image is not None:
                 for c in range(frame.shape[2]):
@@ -286,7 +294,7 @@ class FakeCam:
                 if frame is None:
                     await asyncio.sleep(0.1)
                     continue
-                await self.mask_frame(session, frame)
+                frame = await self.mask_frame(session, frame)
                 self.put_frame(frame)
                 frame_count += 1
                 td = time.monotonic() - t0
@@ -324,6 +332,10 @@ def parse_args():
                         supported.")
     parser.add_argument("--tile-background", action="store_true",
                         help="Tile the background image")
+    parser.add_argument("--no-background", action="store_true",
+                        help="Disable background image, blurry background")
+    parser.add_argument("--background-blur", default="25", type=int,
+                        help="Set background blur level")
     parser.add_argument("--no-foreground", action="store_true",
                         help="Disable foreground image")
     parser.add_argument("-f", "--foreground-image", default="foreground.*",
@@ -346,6 +358,10 @@ def sigquit_handler(loop, cam, signal, frame):
     cam.stop()
     sys.exit(0)
 
+def getNextOddNumber(number):
+    if number % 2 == 0:
+        return number + 1
+    return number
 
 def main():
     args = parse_args()
@@ -354,6 +370,8 @@ def main():
         width=args.width,
         height=args.height,
         scale_factor=args.scale_factor,
+        no_background=args.no_background,
+        background_blur=getNextOddNumber(args.background_blur),
         use_foreground=not args.no_foreground,
         hologram=args.hologram,
         tiling=args.tile_background,

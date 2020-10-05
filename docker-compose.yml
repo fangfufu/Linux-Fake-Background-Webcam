@@ -1,13 +1,15 @@
-version: '3'
+version: '3.7'
 services:
     bodypix:
         image: bodypix
+        init: true
         build:
             context: ./bodypix
         read_only: true
 
     fakecam:
         image: fakecam
+        init: true
         build:
             context: ./fakecam
         read_only: true

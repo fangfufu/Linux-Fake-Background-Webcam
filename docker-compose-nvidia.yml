@@ -4,11 +4,16 @@ services:
         image: bodypix
         build:
             context: ./bodypix
+            dockerfile: ${DOCKERFILE_NVIDIA}
         networks:
             - fakecam
-        read_only: true
         ports:
             - ${PORT_BODYPIX}:9000
+        shm_size: ${SHM_SIZE_BODYPIX}
+        ulimits:
+            memlock: -1
+            stack: 67108864
+        runtime: nvidia
 
     fakecam:
         image: fakecam
@@ -16,7 +21,6 @@ services:
             context: ./fakecam
         networks:
             - fakecam
-        read_only: true
         volumes:
             - ${IMAGE_BACKGROUND}:/src/background-custom:ro
             - ${IMAGE_FOREGROUND}:/src/foreground-custom:ro
@@ -28,7 +32,7 @@ services:
             - bodypix
         command: ["--bodypix-url", "http://bodypix:9000/",
                   "-b", "background-custom", "-f", "foreground-custom" , "-m", "foreground-mask-custom",
-                  "--webcam-path", "/dev/video0", "--v4l2loopback-path", "/dev/video2"]
-
+                  "--webcam-path", "/dev/video0", "--v4l2loopback-path", "/dev/video2",
+                  "--scale-factor", "1"]
 networks:
     fakecam:

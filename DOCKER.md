@@ -81,7 +81,7 @@ docker run -d \
 
 Start the camera, note that we need to pass through video devices,
 and we want our user ID and group to have permission to them
-you may need to `sudo groupadd $USER video`:
+you may need to `sudo useradd $USER video`:
 
 ```bash
 docker run -d \

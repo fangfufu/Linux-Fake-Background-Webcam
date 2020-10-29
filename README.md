@@ -210,7 +210,19 @@ If you are not running fakecam.py under Docker, it supports the following option
 ### bodypix/app.js
 If under/over-segmentation occurs, you can tweak ``segmentationThreshold``. To
 make the network run faster, you can change ``internalResolution``, however this
-will reduce segmentation accuracy.
+will reduce segmentation accuracy. Both and other variables can be changed by
+exposing them via environment variables before running bodypix. See the bodypix
+[manual](https://github.com/tensorflow/tfjs-models/blob/master/body-pix/README.md)
+for detailed information about these.
+
+```
+BPHFLIP     - Horizontal flip [ true, false ]
+BPIRES      - Internal Resolution [ 0.0, 1.0 ]
+BPMULTI     - Multiplier [ 0.0, 1.0 ]
+BPOUTSTRIDE - Output Stride [ 8, 16, 32 ]
+BPQBYTES    - Quantization bytes [ 1, 2, 4 ]
+BPSEGTHRES  - Segmentation Threshold [ 0.0, 1.0 ]
+```
 
 #### Compilation of Tensorflow C library
 Tensorflow.js uses Tensorflow C library. The default version shipped with

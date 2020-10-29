@@ -22,4 +22,4 @@ COPY foreground.jpg \
 RUN pip3 install --no-cache-dir -r requirements.txt
 
 ENTRYPOINT ["python3", "-u", "fake.py"]
-CMD ["--bodypix-url", "http://bodypix:9000/", "--no-foreground"]
+CMD ["--bodypix-url", "http://bodypix:9000/"]

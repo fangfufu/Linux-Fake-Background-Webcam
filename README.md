@@ -133,12 +133,12 @@ Simply run
 Please refer to [DOCKER.md](DOCKER.md). The updated Docker related files were
 added by [liske](https://github.com/liske).
 
-Using Docker is unnecessary. However it makes starting up and shutting down
-the virtual webcam very easy and convenient. The only downside is that you
-lose the ability to change background and foreground images on the fly.
+Using Docker is unnecessary. However it makes starting up and shutting down the virtual webcam very easy and convenient.
+The only downside is that the  ability to change background and foreground images is slightly more complicated and
+has some limitations.
 
 ## Usage
-Assuming you are not using the Docker version, please also make sure that your
+Assuming you are not using the Docker version, overriding the ports settings, please also make sure that your
 TCP port ``127.0.0.1:9000`` is free, as we will be using it.
 
 You can change the port by setting the environment variable PORT. If you set a path, it will use a UNIX Socket instead.
@@ -162,11 +162,11 @@ The files that you might want to replace are the followings:
 If you want to change the files above in the middle of streaming, replace them
 and press ``CTRL-C``
 
-### fakecam.py
+### fakecam/fake.py
 Note that animated background is supported. You can use any video file that can
 be read by OpenCV.
 
-If you are not running fakecam.py under Docker, it supports the following options:
+If you are not running fake.py under Docker, it supports the following options:
 
     usage: fake.py [-h] [-W WIDTH] [-H HEIGHT] [-F FPS] [-S SCALE_FACTOR]
                 [-B BODYPIX_URL] [-w WEBCAM_PATH] [-v V4L2LOOPBACK_PATH]

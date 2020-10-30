@@ -5,7 +5,7 @@ const MULTI = parseFloat(process.env.BPMULTI) || 0.75;
 const OUTSTRIDE = parseInt(process.env.BPOUTSTRIDE) || 16;
 const PORT = process.env.BPPORT || 9000;
 const QBYTES = parseInt(process.env.BPQBYTES) || 2;
-const SEGTHRES = parseFloat(process.env.BPSEGTHRES) || 0.75;t PORT = process.env.PORT || 9000;
+const SEGTHRES = parseFloat(process.env.BPSEGTHRES) || 0.75;
 const tf = tensorflow();
 
 const bodyPix = require('@tensorflow-models/body-pix');

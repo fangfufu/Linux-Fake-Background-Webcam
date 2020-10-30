@@ -20,7 +20,7 @@ Make any changes you need (use nvidia gpu, update images, change video volume ma
 * Docker
 * docker-compose
     * note: If using NVIDIA version, docker-compose 1.27.0+ needed to allow for `runtime` option in file format v3.
-* For use with an NVIDIA GPU: [Nvidia Docker](https://github.com/NVIDIA/nvidia-docker#quickstart
+* For use with an NVIDIA GPU: [Nvidia Docker](https://github.com/NVIDIA/nvidia-docker#quickstart)
 
 
 ### Usage

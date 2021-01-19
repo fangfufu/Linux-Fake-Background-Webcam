@@ -1,4 +1,4 @@
 #!/bin/bash
-pip3 install -r fakecam/requirements.txt
+pip3 install --user -r fakecam/requirements.txt
 cd bodypix
 npm install

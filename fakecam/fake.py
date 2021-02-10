@@ -204,6 +204,8 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
                 background = itertools.repeat(background)
             else:
                 background_video = cv2.VideoCapture(self.background_image)
+                if not background_video.isOpened():
+                    raise RuntimeError("Couldn't open video '{}'".format(self.background_image))
                 self.bg_video_fps = background_video.get(cv2.CAP_PROP_FPS)
                 # Initiate current fps to background video fps
                 self.current_fps = self.bg_video_fps

@@ -216,7 +216,13 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
                         return self.resize_image(frame, self.background_keep_aspect)
                 def next_frame():
                     while True:
-                        self.bg_video_adv_rate = round(self.bg_video_fps/self.current_fps)
+                        advrate=self.bg_video_fps/self.current_fps # Number of frames we need to advance background movie. Fractional.
+                        if advrate<1:
+                            # Number of frames<1 so to avoid movie freezing randomly choose whether to advance by one frame with correct probability.
+                            self.bg_video_adv_rate=1 if np.random.uniform()<advrate else 0
+                        else:
+                            # Just round to nearest number of frames when >=1.
+                            self.bg_video_adv_rate = round(advrate)
                         for i in range(self.bg_video_adv_rate):
                             frame = read_frame();
                         yield frame

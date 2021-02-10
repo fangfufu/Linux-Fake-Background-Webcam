@@ -142,7 +142,7 @@ class FakeCam:
         _, data = cv2.imencode(".png", frame)
         #print("Posting to " + self.bodypix_url)
         async with session.post(
-            url=self.bodypix_url, data=data.tostring(),
+            url=self.bodypix_url, data=data.tobytes(),
             headers={"Content-Type": "application/octet-stream"}
         ) as r:
             mask = np.frombuffer(await r.read(), dtype=np.uint8)

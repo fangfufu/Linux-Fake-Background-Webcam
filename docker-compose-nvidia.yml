@@ -31,8 +31,8 @@ services:
         depends_on:
             - bodypix
         command: ["--bodypix-url", "http://bodypix:9000/",
-                  "-b", "background-custom", "-f", "foreground-custom" , "-m", "foreground-mask-custom",
+                  "-b", "background-custom", "-f", "foreground-custom", "-m", "foreground-mask-custom",
                   "--webcam-path", "/dev/video0", "--v4l2loopback-path", "/dev/video2",
-                  "--scale-factor", "1"]
+                  "--scale-factor", "1",]
 networks:
     fakecam:

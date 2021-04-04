@@ -22,6 +22,9 @@ import threading
 
 from akvcam import AkvCameraWriter
 
+real_cam = "" #Insert real cam eg."/dev/video0"
+fake_cam = "" #Insert fake cam eg."/dev/video4" 
+
 def findFile(pattern, path):
     for root, _, files in os.walk(path):
         for name in files:
@@ -386,9 +389,9 @@ def parse_args():
                         help="Scale factor of the image sent to BodyPix network")
     parser.add_argument("-B", "--bodypix-url", default="http://127.0.0.1:9000",
                         help="Tensorflow BodyPix URL")
-    parser.add_argument("-w", "--webcam-path", default="/dev/video0",
+    parser.add_argument("-w", "--webcam-path", default=real_cam,
                         help="Set real webcam path")
-    parser.add_argument("-v", "--v4l2loopback-path", default="/dev/video2",
+    parser.add_argument("-v", "--v4l2loopback-path", default=fake_cam,
                         help="V4l2loopback device path")
     parser.add_argument("--akvcam", action="store_true",
                         help="Use an akvcam device rather than a v4l2loopback device")

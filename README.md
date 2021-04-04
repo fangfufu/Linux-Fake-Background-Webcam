@@ -28,6 +28,10 @@ that v4l2loopback does not work with certain versions of Ubuntu. Additionally,
 the author has never really managed to get v4l2loopback to work with Google
 Chrome. Therefore support for akvcam has been added.
 
+
+## Secure Boot Disable
+Disabling secure boot is needed for v4l2loopback to work. Reboot your device and press f10 to get into bios settings and disable secure boot.
+
 ### v4l2loopback
 If you are on Debian Buster, you can do the
 following:

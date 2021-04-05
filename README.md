@@ -100,6 +100,11 @@ added the ``rw`` attributes to do the virtual camera devices. If you already
 have already configured akvcam via webcamoid, you need to modify the
 ``/etc/akvcam/config.ini`` to add the ``rw`` attributes.
 
+### Disabling UEFI Secure boot
+Both v4l2loopback and Akvcam require custom kernel module. This might not be possible 
+if you have secure boot enabled. Please refer to your device manufacturer's manual 
+on disabling secure boot. 
+
 ### Python 3
 You will need Python 3. You need to have pip installed. Please make sure that
 you have installed the correct version pip, if you have both Python 2 and

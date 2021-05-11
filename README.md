@@ -70,16 +70,18 @@ instruction:
 2. install aux
     - `sudo apt-get install linux-generic`
     - `sudo apt install dkms`
-3. install v4l2loopback from the repository
+3. install Linux kernel headers
+    - ``sudo apt-get install linux-headers-`uname -r` ``
+4. install v4l2loopback from the repository
     - `git clone https://github.com/umlaeute/v4l2loopback.git`
     - `cd v4l2loopback`
     - `make`  # The other commands are not needed
-4. instal mod
+5. instal mod
     - `sudo cp -R . /usr/src/v4l2loopback-1.1`
     - `sudo dkms add -m v4l2loopback -v 1.1`
     - `sudo dkms build -m v4l2loopback -v 1.1`
     - `sudo dkms install -m v4l2loopback -v 1.1`
-5. reboot
+6. reboot
     - `sudo reboot`
 
 This may apply for other versions of Ubuntu as well. For more information,

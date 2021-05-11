@@ -62,27 +62,23 @@ v4l2loopback from the its
 as the version from your package manager may be too old.
 
 #### Ubuntu 18.04
-If you are using Ubuntu 18.04, please be aware of the following additional
-instruction:
-1. remove apt package
-    - `sudo modprobe -r v4l2loopback`
-    - `sudo apt remove v4l2loopback-dkms`
-2. install aux
-    - `sudo apt-get install linux-generic`
-    - `sudo apt install dkms`
-3. install Linux kernel headers
-    - ``sudo apt-get install linux-headers-`uname -r` ``
-4. install v4l2loopback from the repository
+If you are using Ubuntu 18.04, and if you want to use v4l2loopback, please compile
+v4l2loopback from the source. You need to do the following: 
+1. Remove the ``v4l2loopback`` package
+    - `sudo rmmod -r v4l2loopback`
+    - `sudo apt-get remove v4l2loopback-dkms`
+2. Install DKMS and the Linux kernel headers
+    - ``sudo apt-get install dkms linux-headers-`uname -r` ``
+3. Install v4l2loopback from the repository
     - `git clone https://github.com/umlaeute/v4l2loopback.git`
     - `cd v4l2loopback`
-    - `make`  # The other commands are not needed
-5. instal mod
+4. Install the module via DKMS
     - `sudo cp -R . /usr/src/v4l2loopback-1.1`
     - `sudo dkms add -m v4l2loopback -v 1.1`
     - `sudo dkms build -m v4l2loopback -v 1.1`
     - `sudo dkms install -m v4l2loopback -v 1.1`
-6. reboot
-    - `sudo reboot`
+5. Load the module
+    - `sudo modprobe v4l2loopback`
 
 This may apply for other versions of Ubuntu as well. For more information,
 please refer to the following Github

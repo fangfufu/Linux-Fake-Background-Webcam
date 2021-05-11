@@ -151,10 +151,15 @@ You need to open two terminal windows. In one terminal window, do the following:
     cd bodypix
     node app.js
 
-In the other terminal window, do the following:
+In the other terminal window, do the following (if using v4l2loopback) :
 
     cd fakecam
     python3 fake.py
+
+or (if using Akvcam) :
+
+    cd fakecam
+    python3 fake.py --akvcam
 
 The files that you might want to replace are the followings:
 

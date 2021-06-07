@@ -122,11 +122,6 @@ needed for Debian Buster.
     export PATH="$HOME/.local/bin":$PATH
 configuration files yourself.
 
-### Node.js
-You need to have Node.js. Node.js version 12 is known to work. To install
-Node.js, please follow the instructions at
-[NodeSource](https://github.com/nodesource/distributions/blob/master/README.md).
-
 ## Installation
 Simply run
 
@@ -195,8 +190,6 @@ If you are not running fake.py under Docker, it supports the following options:
     -F FPS, --fps FPS     Set real webcam FPS
     -S SCALE_FACTOR, --scale-factor SCALE_FACTOR
                             Scale factor of the image sent to BodyPix network
-    -B BODYPIX_URL, --bodypix-url BODYPIX_URL
-                            Tensorflow BodyPix URL (or path to UNIX socket)
     -w WEBCAM_PATH, --webcam-path WEBCAM_PATH
                             Set real webcam path
     -v V4L2LOOPBACK_PATH, --v4l2loopback-path V4L2LOOPBACK_PATH
@@ -214,23 +207,6 @@ If you are not running fake.py under Docker, it supports the following options:
     -m FOREGROUND_MASK_IMAGE, --foreground-mask-image FOREGROUND_MASK_IMAGE
                             Foreground mask image path
     --hologram            Add a hologram effect
-
-### bodypix/app.js
-If under/over-segmentation occurs, you can tweak ``segmentationThreshold``. To
-make the network run faster, you can change ``internalResolution``, however this
-will reduce segmentation accuracy. Both and other variables can be changed by
-exposing them via environment variables before running bodypix. See the bodypix
-[manual](https://github.com/tensorflow/tfjs-models/blob/master/body-pix/README.md)
-for detailed information about these.
-
-```
-BPHFLIP     - Horizontal flip [ true, false ]
-BPIRES      - Internal Resolution [ 0.0, 1.0 ]
-BPMULTI     - Multiplier [ 0.0, 1.0 ]
-BPOUTSTRIDE - Output Stride [ 8, 16, 32 ]
-BPQBYTES    - Quantization bytes [ 1, 2, 4 ]
-BPSEGTHRES  - Segmentation Threshold [ 0.0, 1.0 ]
-```
 
 #### Compilation of Tensorflow C library
 Tensorflow.js uses Tensorflow C library. The default version shipped with

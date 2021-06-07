@@ -167,19 +167,19 @@ class FakeCam:
         self.label_id = 15
 
     def _get_mask(self, frame):
-        frame = cv2.resize(frame, (0, 0), fx=self.scale_factor,
-                           fy=self.scale_factor)
+        #frame = cv2.resize(frame, (0, 0), fx=self.scale_factor,
+                           #fy=self.scale_factor)
         send_frame = Image.fromarray(np.array(frame))
         #t0 = time.monotonic()
         mask = self.classifier.classify(send_frame, self.label_id)
         #td = time.monotonic() - t0
         #print(td)
 
-        mask = mask.reshape((frame.shape[0], frame.shape[1]))
-        mask = cv2.resize(
-            mask, (0, 0), fx=1 / self.scale_factor,
-            fy=1 / self.scale_factor, interpolation=cv2.INTER_NEAREST
-        )
+        #mask = mask.reshape((frame.shape[0], frame.shape[1]))
+        #mask = cv2.resize(
+            #mask, (0, 0), fx=1 / self.scale_factor,
+            #fy=1 / self.scale_factor, interpolation=cv2.INTER_NEAREST
+        #)
         #mask = cv2.dilate(mask, np.ones((10, 10), np.uint8), iterations=1)
         #mask = cv2.blur(mask.astype(float), (30, 30))
         return mask
@@ -351,7 +351,7 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
             td = time.monotonic() - t0
             if td > print_fps_period:
                 self.current_fps = frame_count / td
-                #print("FPS: {:6.2f}".format(self.current_fps), end="\r")
+                print("FPS: {:6.2f}".format(self.current_fps), end="\r")
                 frame_count = 0
                 t0 = time.monotonic()
 

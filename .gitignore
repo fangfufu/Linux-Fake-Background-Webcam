@@ -1,5 +1,3 @@
-bodypix/node_modules/
-bodypix/package-lock.json
-docker-compose*.yml
-!docker-compose-nvidia.yml
 .env
+__pycache__
+fakecam/resources

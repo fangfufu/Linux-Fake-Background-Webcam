@@ -19,7 +19,7 @@ import time
 import threading
 
 from akvcam import AkvCameraWriter
-from classifier import Classifier
+from deeplabv3 import Classifier
 
 def findFile(pattern, path):
     for root, _, files in os.walk(path):

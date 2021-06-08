@@ -19,8 +19,6 @@ Make any changes you need (use nvidia gpu, update images, change video volume ma
 * v4l2loopback
 * Docker
 * docker-compose
-    * note: If using NVIDIA version, docker-compose 1.27.0+ needed to allow for `runtime` option in file format v3.
-* For use with an NVIDIA GPU: [Nvidia Docker](https://github.com/NVIDIA/nvidia-docker#quickstart)
 
 
 ### Usage
@@ -29,7 +27,3 @@ Make any changes you need (use nvidia gpu, update images, change video volume ma
  - Stop and remove containers: `docker-compose down`
  - Note: *Ctrl-C* is currently stops the containers instead of changing images
     - You can instead rebuild with new settings: `docker-compose up -d --build`
-
-For the NVIDIA version, add `-f docker-compose-nvidia.yml` to each command e.g.
-- `docker-compose -f docker-compose-nvidia.yml up -d --build`
-- `docker-compose -f docker-compose-nvidia.yml down`

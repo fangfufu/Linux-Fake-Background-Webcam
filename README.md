@@ -24,7 +24,8 @@ provided GPU support sometimes created problems for CPU-only users.
 Recently Google released selfie segmentation support for
 [Mediapipe](https://github.com/google/mediapipe/releases/tag/v0.8.5). This
 repository has been updated to use Mediapipe for image segmentation. This
-significantly increased the performance.
+significantly increased the performance. The older version of this repository
+is now stored in the ``bodypix`` branch. 
 
 ## Prerequisite
 You need to install either v4l2loopback or akvcam. This repository was

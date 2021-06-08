@@ -121,7 +121,6 @@ class FakeCam:
         width: int,
         height: int,
         codec: str,
-        scale_factor: float,
         no_background: bool,
         background_blur: int,
         background_keep_aspect: bool,
@@ -145,7 +144,6 @@ class FakeCam:
         self.background_image = background_image
         self.foreground_image = foreground_image
         self.foreground_mask_image = foreground_mask_image
-        self.scale_factor = scale_factor
         self.real_cam = RealCam(webcam_path, width, height, fps, codec)
         # In case the real webcam does not support the requested mode.
         self.width = self.real_cam.get_frame_width()
@@ -334,8 +332,7 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
 
 def parse_args():
     parser = ArgumentParser(description="Faking your webcam background under \
-                            GNU/Linux. Please make sure your bodypix network \
-                            is running. For more information, please refer to: \
+                            GNU/Linux. Please refer to: \
                             https://github.com/fangfufu/Linux-Fake-Background-Webcam")
     parser.add_argument("-W", "--width", default=1280, type=int,
                         help="Set real webcam width")
@@ -345,8 +342,6 @@ def parse_args():
                         help="Set real webcam FPS")
     parser.add_argument("-C", "--codec", default='MJPG', type=str,
                         help="Set real webcam codec")
-    parser.add_argument("-S", "--scale-factor", default=0.5, type=float,
-                        help="Scale factor of the image sent to BodyPix network")
     parser.add_argument("-w", "--webcam-path", default="/dev/video0",
                         help="Set real webcam path")
     parser.add_argument("-v", "--v4l2loopback-path", default="/dev/video2",
@@ -400,7 +395,6 @@ def main():
         width=args.width,
         height=args.height,
         codec=args.codec,
-        scale_factor=args.scale_factor,
         no_background=args.no_background,
         background_blur=getNextOddNumber(args.background_blur),
         background_keep_aspect=args.background_keep_aspect,

@@ -1,23 +1,11 @@
 version: '3.7'
 services:
-    bodypix:
-        image: bodypix
-        init: true
-        build:
-            context: ./bodypix
-        networks:
-            - fakecam
-        read_only: true
-        ports:
-            - ${PORT_BODYPIX}:9000
 
     fakecam:
         image: fakecam
         init: true
         build:
             context: ./fakecam
-        networks:
-            - fakecam
         read_only: true
         volumes:
             - ${IMAGE_BACKGROUND}:/src/background-custom:ro
@@ -26,11 +14,5 @@ services:
         devices:
             - ${VIDEO_INPUT}:/dev/video0
             - ${VIDEO_OUTPUT}:/dev/video2
-        depends_on:
-            - bodypix
-        command: ["--bodypix-url", "http://bodypix:9000/",
-                  "-b", "background-custom", "-f", "foreground-custom" , "-m", "foreground-mask-custom",
+        command: ["-b", "background-custom", "-f", "foreground-custom" , "-m", "foreground-mask-custom",
                   "--webcam-path", "/dev/video0", "--v4l2loopback-path", "/dev/video2"]
-
-networks:
-    fakecam:

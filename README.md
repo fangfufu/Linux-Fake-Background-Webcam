@@ -207,8 +207,6 @@ be read by OpenCV.
     -F FPS, --fps FPS     Set real webcam FPS
     -C CODEC, --codec CODEC
                             Set real webcam codec
-    -S SCALE_FACTOR, --scale-factor SCALE_FACTOR
-                            Scale factor of the image sent to BodyPix network
     -w WEBCAM_PATH, --webcam-path WEBCAM_PATH
                             Set real webcam path
     -v V4L2LOOPBACK_PATH, --v4l2loopback-path V4L2LOOPBACK_PATH

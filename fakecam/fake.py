@@ -171,7 +171,7 @@ class FakeCam:
                            #fy=self.scale_factor)
         send_frame = Image.fromarray(np.array(frame))
         #t0 = time.monotonic()
-        mask = self.classifier.classify(send_frame, self.label_id)
+        mask = np.array(self.classifier.classify(send_frame, self.label_id))
         #td = time.monotonic() - t0
         #print(td)
 

@@ -27,20 +27,18 @@ class Classifier:
 
         self.interpreter.set_tensor(self.input_details[0]['index'],
                                     processed_img)
-
         self.interpreter.invoke()
         tensor = self.interpreter.get_tensor(self.output_details[0]['index'])[0]
         label = np.argmax(tensor, 2)
-
-        return np.array(Image.fromarray(label == selected_label
-                                        ).resize(input_img.size))
+        mask = (label == selected_label)
+        mask_img = Image.fromarray(np.uint8(mask)).convert('L')
+        return mask_img.resize(input_img.size)
 
 if __name__ == "__main__":
     classifier = Classifier()
     input_img = Image.open("image.jpg")
     t0 = time.monotonic()
-    output_img = Image.fromarray(np.uint8(classifier.classify(input_img,
-                                                              15)*255))
+    output_img = classifier.classify(input_img, 15)
     output_img.save("output.png")
     td = time.monotonic() - t0
     print(td)

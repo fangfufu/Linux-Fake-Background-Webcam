@@ -1,2 +1,2 @@
 #!/bin/bash
-pip3 install --user -r fakecam/requirements.txt
+pip3 install --user -r requirements.txt

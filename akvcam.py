@@ -1,20 +1,14 @@
 from fcntl import ioctl
 import pyfakewebcam.v4l2 as v4l2
 import os
-import threading
-from queue import Queue
 import cv2
 import numpy as np
-
 class AkvCameraWriter:
     def __init__(self, webcam, width, height):
         self.webcam = webcam
         self.width = width
         self.height = height
         self.d = self.open_camera()
-        self.queue = Queue(maxsize=1)
-        self.thread = threading.Thread(target=self.writer_thread)
-        self.thread.start()
 
     def open_camera(self):
         d = os.open(self.webcam, os.O_RDWR)
@@ -30,22 +24,11 @@ class AkvCameraWriter:
         ioctl(d, v4l2.VIDIOC_S_FMT, vid_format)
         return d
 
-    def writer_thread(self):
-        while True:
-            elem = self.queue.get()
-            if elem is None:
-                break
-            image_data = cv2.resize(elem, (self.width, self.height)).tobytes()
-            try:
-                os.write(self.d, image_data)
-            except Exception:
-                break
-
     def schedule_frame(self, image):
-        self.queue.put(image)
+        image_data = cv2.resize(image, (self.width, self.height)).tobytes()
+        os.write(self.d, image_data)
 
     def __del__(self):
-        self.queue.put(None)
         os.close(self.d)
 
 

@@ -27,4 +27,3 @@ Make any changes you need (use nvidia gpu, update images, change video volume ma
  - Stop and remove containers: `docker-compose down`
  - Note: *Ctrl-C* is currently stops the containers instead of changing images
     - You can instead rebuild with new settings: `docker-compose up -d --build`
-    

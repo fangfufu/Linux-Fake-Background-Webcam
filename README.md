@@ -186,10 +186,12 @@ be read by OpenCV.
 
 ``fakecam.py`` supports the following options:
 
-    usage: fake.py [-h] [-W WIDTH] [-H HEIGHT] [-F FPS] [-S SCALE_FACTOR]
-                [-B BODYPIX_URL] [-w WEBCAM_PATH] [-v V4L2LOOPBACK_PATH]
+    usage: fake.py [-h] [-W WIDTH] [-H HEIGHT] [-F FPS] [-C CODEC]
+                [-S SCALE_FACTOR] [-w WEBCAM_PATH] [-v V4L2LOOPBACK_PATH]
                 [--akvcam] [-i IMAGE_FOLDER] [-b BACKGROUND_IMAGE]
-                [--tile-background] [--no-foreground] [-f FOREGROUND_IMAGE]
+                [--tile-background] [--no-background]
+                [--background-blur BACKGROUND_BLUR] [--background-keep-aspect]
+                [--no-foreground] [-f FOREGROUND_IMAGE]
                 [-m FOREGROUND_MASK_IMAGE] [--hologram]
 
     Faking your webcam background under GNU/Linux. Please make sure your bodypix
@@ -203,6 +205,8 @@ be read by OpenCV.
     -H HEIGHT, --height HEIGHT
                             Set real webcam height
     -F FPS, --fps FPS     Set real webcam FPS
+    -C CODEC, --codec CODEC
+                            Set real webcam codec
     -S SCALE_FACTOR, --scale-factor SCALE_FACTOR
                             Scale factor of the image sent to BodyPix network
     -w WEBCAM_PATH, --webcam-path WEBCAM_PATH
@@ -216,6 +220,11 @@ be read by OpenCV.
                             Background image path, animated background is
                             supported.
     --tile-background     Tile the background image
+    --no-background       Disable background image, blurry background
+    --background-blur BACKGROUND_BLUR
+                            Set background blur level
+    --background-keep-aspect
+                            Crop background if needed to maintain aspect ratio
     --no-foreground       Disable foreground image
     -f FOREGROUND_IMAGE, --foreground-image FOREGROUND_IMAGE
                             Foreground image path
@@ -224,6 +233,7 @@ be read by OpenCV.
     --hologram            Add a hologram effect
 
 ## License
+The soure code of this file are released under GPLv3.
 
     Linux Fake Background Webcam
     Copyright (C) 2020-2021  Fufu Fang
@@ -240,4 +250,5 @@ be read by OpenCV.
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 

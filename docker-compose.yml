@@ -5,7 +5,7 @@ services:
         image: fakecam
         init: true
         build:
-            context: ./fakecam
+            context: ./
         read_only: true
         volumes:
             - ${IMAGE_BACKGROUND}:/src/background-custom:ro

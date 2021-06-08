@@ -8,7 +8,6 @@ import traceback
 from argparse import ArgumentParser
 from functools import partial
 from typing import Any, Dict
-from PIL import Image
 
 import cv2
 import numpy as np
@@ -17,9 +16,9 @@ import os
 import fnmatch
 import time
 import threading
+import mediapipe as mp
 
 from akvcam import AkvCameraWriter
-from deeplabv3 import Classifier
 
 def findFile(pattern, path):
     for root, _, files in os.walk(path):
@@ -31,11 +30,9 @@ def findFile(pattern, path):
 def get_codec_args_from_string(codec):
     return (char for char in codec)
 
-
 def _log_camera_property_not_set(prop, value):
     print("Cannot set camera property {} to {}. "
           "Defaulting to auto-detected property set by opencv".format(prop, value))
-
 
 class RealCam:
     def __init__(self, src, frame_width, frame_height, frame_rate, codec):
@@ -162,27 +159,7 @@ class FakeCam:
         self.inverted_foreground_mask = None
         self.images: Dict[str, Any] = {}
         self.image_lock = asyncio.Lock()
-        self.classifier = Classifier()
-        # Label ID 15 is for "person"
-        self.label_id = 15
-
-    def _get_mask(self, frame):
-        #frame = cv2.resize(frame, (0, 0), fx=self.scale_factor,
-                           #fy=self.scale_factor)
-        send_frame = Image.fromarray(np.array(frame))
-        #t0 = time.monotonic()
-        mask = np.array(self.classifier.classify(send_frame, self.label_id))
-        #td = time.monotonic() - t0
-        #print(td)
-
-        #mask = mask.reshape((frame.shape[0], frame.shape[1]))
-        #mask = cv2.resize(
-            #mask, (0, 0), fx=1 / self.scale_factor,
-            #fy=1 / self.scale_factor, interpolation=cv2.INTER_NEAREST
-        #)
-        #mask = cv2.dilate(mask, np.ones((10, 10), np.uint8), iterations=1)
-        #mask = cv2.blur(mask.astype(float), (30, 30))
-        return mask
+        self.classifier = mp.solutions.selfie_segmentation.SelfieSegmentation(model_selection=1)
 
     def shift_image(self, img, dx, dy):
         img = np.roll(img, dy, axis=0)
@@ -299,7 +276,7 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
         mask = None
         while mask is None:
             try:
-                mask = self._get_mask(frame)
+                mask = self.classifier.process(frame).segmentation_mask
             except Exception as e:
                 print(f"Mask request failed, retrying: {e}")
                 traceback.print_exc()
@@ -445,7 +422,6 @@ def main():
     print("Please CTRL-\ to exit")
     # frames forever
     loop.run_until_complete(cam.run())
-
 
 if __name__ == "__main__":
     main()

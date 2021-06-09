@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import asyncio
 import itertools
 import signal
 import sys
@@ -8,7 +7,7 @@ import traceback
 from argparse import ArgumentParser
 from functools import partial
 from typing import Any, Dict
-
+from time import sleep
 import cv2
 import numpy as np
 import pyfakewebcam
@@ -156,7 +155,6 @@ class FakeCam:
         self.foreground_mask = None
         self.inverted_foreground_mask = None
         self.images: Dict[str, Any] = {}
-        self.image_lock = asyncio.Lock()
         self.classifier = mp.solutions.selfie_segmentation.SelfieSegmentation(model_selection=1)
 
     def shift_image(self, img, dx, dy):
@@ -188,67 +186,66 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
             img = cv2.resize(img, (self.width, self.height))
         return img
 
-    async def load_images(self):
-        async with self.image_lock:
-            self.images: Dict[str, Any] = {}
+    def load_images(self):
+        self.images: Dict[str, Any] = {}
 
-            background = cv2.imread(self.background_image)
-            if background is not None:
-                if not self.tiling:
-                    background = self.resize_image(background, self.background_keep_aspect)
-                else:
-                    sizey, sizex = background.shape[0], background.shape[1]
-                    if sizex > self.width and sizey > self.height:
-                        background = cv2.resize(background, (self.width, self.height))
-                    else:
-                        repx = (self.width - 1) // sizex + 1
-                        repy = (self.height - 1) // sizey + 1
-                        background = np.tile(background,(repy, repx, 1))
-                        background = background[0:self.height, 0:self.width]
-                background = itertools.repeat(background)
+        background = cv2.imread(self.background_image)
+        if background is not None:
+            if not self.tiling:
+                background = self.resize_image(background, self.background_keep_aspect)
             else:
-                background_video = cv2.VideoCapture(self.background_image)
-                if not background_video.isOpened():
-                    raise RuntimeError("Couldn't open video '{}'".format(self.background_image))
-                self.bg_video_fps = background_video.get(cv2.CAP_PROP_FPS)
-                # Initiate current fps to background video fps
-                self.current_fps = self.bg_video_fps
-                def read_frame():
+                sizey, sizex = background.shape[0], background.shape[1]
+                if sizex > self.width and sizey > self.height:
+                    background = cv2.resize(background, (self.width, self.height))
+                else:
+                    repx = (self.width - 1) // sizex + 1
+                    repy = (self.height - 1) // sizey + 1
+                    background = np.tile(background,(repy, repx, 1))
+                    background = background[0:self.height, 0:self.width]
+            background = itertools.repeat(background)
+        else:
+            background_video = cv2.VideoCapture(self.background_image)
+            if not background_video.isOpened():
+                raise RuntimeError("Couldn't open video '{}'".format(self.background_image))
+            self.bg_video_fps = background_video.get(cv2.CAP_PROP_FPS)
+            # Initiate current fps to background video fps
+            self.current_fps = self.bg_video_fps
+            def read_frame():
+                    ret, frame = background_video.read()
+                    if not ret:
+                        background_video.set(cv2.CAP_PROP_POS_FRAMES, 0)
                         ret, frame = background_video.read()
-                        if not ret:
-                            background_video.set(cv2.CAP_PROP_POS_FRAMES, 0)
-                            ret, frame = background_video.read()
-                            assert ret, 'cannot read frame %r' % self.background_image
-                        return self.resize_image(frame, self.background_keep_aspect)
-                def next_frame():
-                    while True:
-                        advrate=self.bg_video_fps/self.current_fps # Number of frames we need to advance background movie. Fractional.
-                        if advrate<1:
-                            # Number of frames<1 so to avoid movie freezing randomly choose whether to advance by one frame with correct probability.
-                            self.bg_video_adv_rate=1 if np.random.uniform()<advrate else 0
-                        else:
-                            # Just round to nearest number of frames when >=1.
-                            self.bg_video_adv_rate = round(advrate)
-                        for i in range(self.bg_video_adv_rate):
-                            frame = read_frame();
-                        yield frame
-                background = next_frame()
+                        assert ret, 'cannot read frame %r' % self.background_image
+                    return self.resize_image(frame, self.background_keep_aspect)
+            def next_frame():
+                while True:
+                    advrate=self.bg_video_fps/self.current_fps # Number of frames we need to advance background movie. Fractional.
+                    if advrate<1:
+                        # Number of frames<1 so to avoid movie freezing randomly choose whether to advance by one frame with correct probability.
+                        self.bg_video_adv_rate=1 if np.random.uniform()<advrate else 0
+                    else:
+                        # Just round to nearest number of frames when >=1.
+                        self.bg_video_adv_rate = round(advrate)
+                    for i in range(self.bg_video_adv_rate):
+                        frame = read_frame();
+                    yield frame
+            background = next_frame()
 
-            self.images["background"] = background
+        self.images["background"] = background
 
-            if self.use_foreground and self.foreground_image is not None:
-                foreground = cv2.imread(self.foreground_image)
-                self.images["foreground"] = cv2.resize(foreground,
-                                                       (self.width, self.height))
-                foreground_mask = cv2.imread(self.foreground_mask_image)
-                foreground_mask = cv2.normalize(
-                    foreground_mask, None, alpha=0, beta=1,
-                    norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
-                foreground_mask = cv2.resize(foreground_mask,
-                                             (self.width, self.height))
-                self.images["foreground_mask"] = cv2.cvtColor(
-                    foreground_mask, cv2.COLOR_BGR2GRAY)
-                self.images["inverted_foreground_mask"] = 1 - self.images["foreground_mask"]
+        if self.use_foreground and self.foreground_image is not None:
+            foreground = cv2.imread(self.foreground_image)
+            self.images["foreground"] = cv2.resize(foreground,
+                                                    (self.width, self.height))
+            foreground_mask = cv2.imread(self.foreground_mask_image)
+            foreground_mask = cv2.normalize(
+                foreground_mask, None, alpha=0, beta=1,
+                norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+            foreground_mask = cv2.resize(foreground_mask,
+                                            (self.width, self.height))
+            self.images["foreground_mask"] = cv2.cvtColor(
+                foreground_mask, cv2.COLOR_BGR2GRAY)
+            self.images["inverted_foreground_mask"] = 1 - self.images["foreground_mask"]
 
     def hologram_effect(self, img):
         # add a blue tint
@@ -266,7 +263,7 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
         return out
 
 
-    async def mask_frame(self, frame):
+    def mask_frame(self, frame):
         # fetch the mask with retries (the app needs to warmup and we're lazy)
         # e v e n t u a l l y c o n s i s t e n t
         # ^ Whoever wrote the above line, it makes me laugh, but I have no idea
@@ -286,18 +283,17 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
         background_frame = cv2.blur(frame, (self.background_blur, self.background_blur), cv2.BORDER_DEFAULT)
 
         # composite the foreground and background
-        async with self.image_lock:
-            if self.no_background is False:
-                background_frame = next(self.images["background"])
-            for c in range(frame.shape[2]):
-                frame[:, :, c] = foreground_frame[:, :, c] * mask + background_frame[:, :, c] * (1 - mask)
+        if self.no_background is False:
+            background_frame = next(self.images["background"])
+        for c in range(frame.shape[2]):
+            frame[:, :, c] = foreground_frame[:, :, c] * mask + background_frame[:, :, c] * (1 - mask)
 
-            if self.use_foreground and self.foreground_image is not None:
-                for c in range(frame.shape[2]):
-                    frame[:, :, c] = (
-                        frame[:, :, c] * self.images["inverted_foreground_mask"]
-                        + self.images["foreground"][:, :, c] * self.images["foreground_mask"]
-                        )
+        if self.use_foreground and self.foreground_image is not None:
+            for c in range(frame.shape[2]):
+                frame[:, :, c] = (
+                    frame[:, :, c] * self.images["inverted_foreground_mask"]
+                    + self.images["foreground"][:, :, c] * self.images["foreground_mask"]
+                    )
 
         return frame
 
@@ -309,8 +305,8 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
         if self.use_akvcam:
             self.fake_cam.__del__()
 
-    async def run(self):
-        await self.load_images()
+    def run(self):
+        self.load_images()
         self.real_cam.start()
         t0 = time.monotonic()
         print_fps_period = 1
@@ -318,9 +314,9 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
         while True:
             frame = self.real_cam.read()
             if frame is None:
-                await asyncio.sleep(0.1)
+                sleep(0.1)
                 continue
-            frame = await self.mask_frame(frame)
+            frame = self.mask_frame(frame)
             self.put_frame(frame)
             frame_count += 1
             td = time.monotonic() - t0
@@ -373,12 +369,12 @@ def parse_args():
     return parser.parse_args()
 
 
-def sigint_handler(loop, cam, signal, frame):
+def sigint_handler(cam, signal, frame):
     print("Reloading background / foreground images")
-    asyncio.ensure_future(cam.load_images())
+    cam.load_images()
 
 
-def sigquit_handler(loop, cam, signal, frame):
+def sigquit_handler(cam, signal, frame):
     print("Killing fake cam process")
     cam.stop()
     sys.exit(0)
@@ -408,14 +404,13 @@ def main():
         webcam_path=args.webcam_path,
         v4l2loopback_path=args.v4l2loopback_path,
         use_akvcam=args.akvcam)
-    loop = asyncio.get_event_loop()
-    signal.signal(signal.SIGINT, partial(sigint_handler, loop, cam))
-    signal.signal(signal.SIGQUIT, partial(sigquit_handler, loop, cam))
+    signal.signal(signal.SIGINT, partial(sigint_handler, cam))
+    signal.signal(signal.SIGQUIT, partial(sigquit_handler, cam))
     print("Running...")
     print("Please CTRL-C to reload the background / foreground images")
     print("Please CTRL-\ to exit")
     # frames forever
-    loop.run_until_complete(cam.run())
+    cam.run()
 
 if __name__ == "__main__":
     main()

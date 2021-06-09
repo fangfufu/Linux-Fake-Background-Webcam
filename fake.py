@@ -3,11 +3,9 @@
 import itertools
 import signal
 import sys
-import traceback
 from argparse import ArgumentParser
 from functools import partial
 from typing import Any, Dict
-from time import sleep
 import cv2
 import numpy as np
 import pyfakewebcam
@@ -308,7 +306,7 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
         while True:
             frame = self.real_cam.read()
             if frame is None:
-                sleep(0.1)
+                time.sleep(0.1)
                 continue
             frame = self.compose_frame(frame)
             self.put_frame(frame)

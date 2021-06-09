@@ -1,6 +1,4 @@
 numpy>=1.19.3
 opencv-python>=4.4.0.46
-requests>=2.23.0
-requests-unixsocket>=0.2.0
 pyfakewebcam>=0.1.0
 mediapipe>=0.8.5

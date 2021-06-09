@@ -100,13 +100,11 @@ class RealCam:
             grabbed, frame = self.cam.read()
             if grabbed:
                 with self.lock:
-                    self.frame = frame.copy()
+                    self.frame = frame
 
     def read(self):
         with self.lock:
-            if self.frame is None:
-               return None
-            return self.frame.copy()
+            return self.frame
 
     def stop(self):
         self.stopped = True
@@ -263,36 +261,30 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
         return out
 
 
-    def mask_frame(self, frame):
-        # fetch the mask with retries (the app needs to warmup and we're lazy)
-        # e v e n t u a l l y c o n s i s t e n t
-        # ^ Whoever wrote the above line, it makes me laugh, but I have no idea
-        # what it does or means anymore...
-        mask = None
-        while mask is None:
-            try:
-                mask = self.classifier.process(frame).segmentation_mask
-            except Exception as e:
-                print(f"Mask request failed, retrying: {e}")
-                traceback.print_exc()
+    def compose_frame(self, frame):
+        frame.flags.writeable = False
+        mask =  self.classifier.process(frame).segmentation_mask
+        frame.flags.writeable = True
 
-        foreground_frame = background_frame = frame
         if self.hologram:
             foreground_frame = self.hologram_effect(foreground_frame)
 
-        background_frame = cv2.blur(frame, (self.background_blur, self.background_blur), cv2.BORDER_DEFAULT)
-
-        # composite the foreground and background
+        # Get background image
         if self.no_background is False:
             background_frame = next(self.images["background"])
-        for c in range(frame.shape[2]):
-            frame[:, :, c] = foreground_frame[:, :, c] * mask + background_frame[:, :, c] * (1 - mask)
+        else:
+            background_frame = cv2.blur(frame, (self.background_blur, self.background_blur), cv2.BORDER_DEFAULT)
 
+        # Replace background
+        for c in range(frame.shape[2]):
+            frame[:, :, c] = frame[:, :, c] * mask + background_frame[:, :, c] * (1 - mask)
+
+        # Add foreground if needed
         if self.use_foreground and self.foreground_image is not None:
             for c in range(frame.shape[2]):
                 frame[:, :, c] = (
-                    frame[:, :, c] * self.images["inverted_foreground_mask"]
-                    + self.images["foreground"][:, :, c] * self.images["foreground_mask"]
+                    frame[:, :, c] * self.images["inverted_foreground_mask"] +
+                    self.images["foreground"][:, :, c] * self.images["foreground_mask"]
                     )
 
         return frame
@@ -316,7 +308,7 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
             if frame is None:
                 sleep(0.1)
                 continue
-            frame = self.mask_frame(frame)
+            frame = self.compose_frame(frame)
             self.put_frame(frame)
             frame_count += 1
             td = time.monotonic() - t0
@@ -346,13 +338,13 @@ def parse_args():
                         help="Use an akvcam device rather than a v4l2loopback device")
     parser.add_argument("-i", "--image-folder", default=".",
                         help="Folder which contains foreground and background images")
+    parser.add_argument("--no-background", action="store_true",
+                        help="Disable background image and blur the real background")
     parser.add_argument("-b", "--background-image", default="background.*",
                         help="Background image path, animated background is \
                         supported.")
     parser.add_argument("--tile-background", action="store_true",
                         help="Tile the background image")
-    parser.add_argument("--no-background", action="store_true",
-                        help="Disable background image, blurry background")
     parser.add_argument("--background-blur", default="25", type=int,
                         help="Set background blur level")
     parser.add_argument("--background-keep-aspect", action="store_true",

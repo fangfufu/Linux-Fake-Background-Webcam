@@ -104,7 +104,9 @@ class RealCam:
 
     def read(self):
         with self.lock:
-            return self.frame
+            if self.frame is None:
+               return None
+            return self.frame.copy()
 
     def stop(self):
         self.stopped = True
@@ -264,7 +266,6 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
     def compose_frame(self, frame):
         frame.flags.writeable = False
         mask =  self.classifier.process(frame).segmentation_mask
-        frame.flags.writeable = True
 
         if self.hologram:
             foreground_frame = self.hologram_effect(foreground_frame)
@@ -274,6 +275,7 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
             background_frame = next(self.images["background"])
         else:
             background_frame = cv2.blur(frame, (self.background_blur, self.background_blur), cv2.BORDER_DEFAULT)
+        frame.flags.writeable = True
 
         # Replace background
         for c in range(frame.shape[2]):

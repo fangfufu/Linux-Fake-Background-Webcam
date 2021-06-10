@@ -266,7 +266,7 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
         mask =  self.classifier.process(frame).segmentation_mask
 
         if self.hologram:
-            foreground_frame = self.hologram_effect(foreground_frame)
+            frame = self.hologram_effect(frame)
 
         # Get background image
         if self.no_background is False:

@@ -103,7 +103,7 @@ colour format of Akvcam.
 3. Note down the output of ``ls /dev/video*``.
 4. Run ``sudo modprobe akvcam``
 5. Akvcam should have created two extra ``video`` devices.
-6. When running ``fake.py``, you need to set ``-v`` to the second video device
+6. When running ``fake.py``, you need to set ``-v`` to the first video device
 that Akvcam created, e.g. if Akvcam created ``/dev/video5`` and ``/dev/video6``,
 you need to set ``-v /dev/video5``.
 7. The software that uses the virtual webcam should the second device that

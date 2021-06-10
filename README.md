@@ -182,9 +182,6 @@ In the terminal window, do the following (if using v4l2loopback) :
 
     python3 fake.py
 
-or (if using Akvcam) :
-
-    python3 fake.py --akvcam
 
 The files that you might want to replace are the followings:
 
@@ -203,15 +200,13 @@ be read by OpenCV.
 ``fakecam.py`` supports the following options:
 
     usage: fake.py [-h] [-W WIDTH] [-H HEIGHT] [-F FPS] [-C CODEC]
-                [-S SCALE_FACTOR] [-w WEBCAM_PATH] [-v V4L2LOOPBACK_PATH]
-                [--akvcam] [-i IMAGE_FOLDER] [-b BACKGROUND_IMAGE]
-                [--tile-background] [--no-background]
+                [-w WEBCAM_PATH] [-v V4L2LOOPBACK_PATH] [-i IMAGE_FOLDER]
+                [--no-background] [-b BACKGROUND_IMAGE] [--tile-background]
                 [--background-blur BACKGROUND_BLUR] [--background-keep-aspect]
                 [--no-foreground] [-f FOREGROUND_IMAGE]
                 [-m FOREGROUND_MASK_IMAGE] [--hologram]
 
-    Faking your webcam background under GNU/Linux. Please make sure your bodypix
-    network is running. For more information, please refer to:
+    Faking your webcam background under GNU/Linux. Please refer to:
     https://github.com/fangfufu/Linux-Fake-Background-Webcam
 
     optional arguments:
@@ -227,14 +222,13 @@ be read by OpenCV.
                             Set real webcam path
     -v V4L2LOOPBACK_PATH, --v4l2loopback-path V4L2LOOPBACK_PATH
                             V4l2loopback device path
-    --akvcam              Use an akvcam device rather than a v4l2loopback device
     -i IMAGE_FOLDER, --image-folder IMAGE_FOLDER
                             Folder which contains foreground and background images
+    --no-background       Disable background image and blur the real background
     -b BACKGROUND_IMAGE, --background-image BACKGROUND_IMAGE
                             Background image path, animated background is
                             supported.
     --tile-background     Tile the background image
-    --no-background       Disable background image, blurry background
     --background-blur BACKGROUND_BLUR
                             Set background blur level
     --background-keep-aspect

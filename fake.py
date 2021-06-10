@@ -263,18 +263,21 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
 
     def compose_frame(self, frame):
         frame.flags.writeable = False
-        mask =  self.classifier.process(frame).segmentation_mask
 
-        if self.hologram:
-            frame = self.hologram_effect(frame)
+        mask =  self.classifier.process(frame).segmentation_mask
 
         # Get background image
         if self.no_background is False:
             background_frame = next(self.images["background"])
         else:
             background_frame = cv2.blur(frame, (self.background_blur, self.background_blur), cv2.BORDER_DEFAULT)
-        frame.flags.writeable = True
 
+        frame.flags.writeable = True
+        
+        # Add hologram to foreground
+        if self.hologram:
+            frame = self.hologram_effect(frame)
+            
         # Replace background
         for c in range(frame.shape[2]):
             frame[:, :, c] = frame[:, :, c] * mask + background_frame[:, :, c] * (1 - mask)

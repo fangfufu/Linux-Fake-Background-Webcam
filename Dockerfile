@@ -13,7 +13,6 @@ COPY foreground.jpg \
     foreground-mask.png \
     background.jpg \
     fake.py \
-    akvcam.py \
     requirements.txt \
     /src/
 

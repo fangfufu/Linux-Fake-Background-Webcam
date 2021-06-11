@@ -96,7 +96,7 @@ class RealCam:
             grabbed, frame = self.cam.read()
             if grabbed:
                 with self.lock:
-                    self.frame = frame
+                    self.frame = frame.copy()
 
     def read(self):
         with self.lock:

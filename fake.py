@@ -31,7 +31,6 @@ def _log_camera_property_not_set(prop, value):
 class RealCam:
     def __init__(self, src, frame_width, frame_height, frame_rate, codec):
         self.cam = cv2.VideoCapture(src, cv2.CAP_V4L2)
-        self.frame = None
         self.get_camera_values("original")
         c1, c2, c3, c4 = get_codec_args_from_string(codec)
         self._set_codec(cv2.VideoWriter_fourcc(c1, c2, c3, c4))

@@ -12,7 +12,6 @@ import pyfakewebcam
 import os
 import fnmatch
 import time
-import threading
 import mediapipe as mp
 
 def findFile(pattern, path):
@@ -32,9 +31,7 @@ def _log_camera_property_not_set(prop, value):
 class RealCam:
     def __init__(self, src, frame_width, frame_height, frame_rate, codec):
         self.cam = cv2.VideoCapture(src, cv2.CAP_V4L2)
-        self.stopped = False
         self.frame = None
-        self.lock = threading.Lock()
         self.get_camera_values("original")
         c1, c2, c3, c4 = get_codec_args_from_string(codec)
         self._set_codec(cv2.VideoWriter_fourcc(c1, c2, c3, c4))
@@ -86,27 +83,12 @@ class RealCam:
     def get_frame_rate(self):
         return int(self.cam.get(cv2.CAP_PROP_FPS))
 
-    def start(self):
-        self.thread = threading.Thread(target=self.update)
-        self.thread.start()
-        return self
-
-    def update(self):
-        while not self.stopped:
-            grabbed, frame = self.cam.read()
-            if grabbed:
-                with self.lock:
-                    self.frame = frame
-
     def read(self):
-        with self.lock:
-            if self.frame is None:
-               return None
-            return self.frame.copy()
-
-    def stop(self):
-        self.stopped = True
-        self.thread.join()
+        while True:
+            grabbed, frame = self.cam.read()
+            if not grabbed:
+                continue
+            return frame
 
 
 class FakeCam:
@@ -293,7 +275,6 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
 
     def run(self):
         self.load_images()
-        self.real_cam.start()
         t0 = time.monotonic()
         print_fps_period = 1
         frame_count = 0

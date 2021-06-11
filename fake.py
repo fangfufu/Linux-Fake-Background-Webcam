@@ -269,9 +269,6 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
     def put_frame(self, frame):
         self.fake_cam.schedule_frame(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
 
-    def stop(self):
-        self.real_cam.stop()
-
     def run(self):
         self.load_images()
         t0 = time.monotonic()
@@ -291,6 +288,7 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
                 print("FPS: {:6.2f}".format(self.current_fps), end="\r")
                 frame_count = 0
                 t0 = time.monotonic()
+
 
 def parse_args():
     parser = ArgumentParser(description="Faking your webcam background under \
@@ -332,15 +330,12 @@ def parse_args():
                         help="Add a hologram effect")
     return parser.parse_args()
 
-
 def sigint_handler(cam, signal, frame):
     print("Reloading background / foreground images")
     cam.load_images()
 
-
 def sigquit_handler(cam, signal, frame):
     print("Killing fake cam process")
-    cam.stop()
     sys.exit(0)
 
 def getNextOddNumber(number):

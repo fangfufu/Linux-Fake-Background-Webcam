@@ -14,6 +14,7 @@ import fnmatch
 import time
 import threading
 import mediapipe as mp
+import copy
 
 def findFile(pattern, path):
     for root, _, files in os.walk(path):
@@ -96,13 +97,13 @@ class RealCam:
             grabbed, frame = self.cam.read()
             if grabbed:
                 with self.lock:
-                    self.frame = frame.copy()
+                    self.frame = copy.deepcopy(frame)
 
     def read(self):
         with self.lock:
             if self.frame is None:
                return None
-            return self.frame.copy()
+            return copy.deepcopy(self.frame)
 
     def stop(self):
         self.stopped = True

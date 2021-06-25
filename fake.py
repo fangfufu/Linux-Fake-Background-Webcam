@@ -123,7 +123,6 @@ class FakeCam:
         use_foreground: bool,
         hologram: bool,
         tiling: bool,
-        socket: str,
         background_image: str,
         foreground_image: str,
         foreground_mask_image: str,
@@ -267,11 +266,11 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
             background_frame = cv2.blur(frame, (self.background_blur, self.background_blur), cv2.BORDER_DEFAULT)
 
         frame.flags.writeable = True
-        
+
         # Add hologram to foreground
         if self.hologram:
             frame = self.hologram_effect(frame)
-            
+
         # Replace background
         for c in range(frame.shape[2]):
             frame[:, :, c] = frame[:, :, c] * mask + background_frame[:, :, c] * (1 - mask)
@@ -358,7 +357,6 @@ def sigint_handler(cam, signal, frame):
     print("Reloading background / foreground images")
     cam.load_images()
 
-
 def sigquit_handler(cam, signal, frame):
     print("Killing fake cam process")
     cam.stop()
@@ -382,7 +380,6 @@ def main():
         use_foreground=not args.no_foreground,
         hologram=args.hologram,
         tiling=args.tile_background,
-        socket="",
         background_image=findFile(args.background_image, args.image_folder),
         foreground_image=findFile(args.foreground_image, args.image_folder),
         foreground_mask_image=findFile(args.foreground_mask_image, args.image_folder),

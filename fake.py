@@ -26,7 +26,8 @@ def get_codec_args_from_string(codec):
 
 def _log_camera_property_not_set(prop, value):
     print("Cannot set camera property {} to {}. "
-          "Defaulting to auto-detected property set by opencv".format(prop, value))
+          "Defaulting to auto-detected property set by opencv".format(prop,
+                                                                      value))
 
 class RealCam:
     def __init__(self, src, frame_width, frame_height, frame_rate, codec):
@@ -56,7 +57,8 @@ class RealCam:
 
     def _set_frame_dimensions(self, width, height):
         # width/height need to both be set before checking for any errors.
-        # If either are checked before setting both, either can be reported as not set properly
+        # If either are checked before setting both, either can be reported as
+        # not set properly
         self.cam.set(cv2.CAP_PROP_FRAME_WIDTH, width)
         self.cam.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
 
@@ -103,7 +105,6 @@ class FakeCam:
         use_foreground: bool,
         hologram: bool,
         tiling: bool,
-        socket: str,
         background_image: str,
         foreground_image: str,
         foreground_mask_image: str,
@@ -119,15 +120,27 @@ class FakeCam:
         self.background_image = background_image
         self.foreground_image = foreground_image
         self.foreground_mask_image = foreground_mask_image
-        self.real_cam = RealCam(webcam_path, width, height, fps, codec)
+        self.webcam_path = webcam_path
+        self.width = width
+        self.height = height
+        self.fps = fps
+        self.codec = codec
+        self.real_cam = RealCam(self.webcam_path,
+                                self.width,
+                                self.height,
+                                self.fps,
+                                self.codec)
         # In case the real webcam does not support the requested mode.
         self.width = self.real_cam.get_frame_width()
         self.height = self.real_cam.get_frame_height()
-        self.fake_cam = pyfakewebcam.FakeWebcam(v4l2loopback_path, self.width, self.height)
+        self.fake_cam = pyfakewebcam.FakeWebcam(v4l2loopback_path, self.width,
+                                                self.height)
         self.foreground_mask = None
         self.inverted_foreground_mask = None
         self.images: Dict[str, Any] = {}
-        self.classifier = mp.solutions.selfie_segmentation.SelfieSegmentation(model_selection=1)
+        self.classifier = mp.solutions.selfie_segmentation.SelfieSegmentation(
+            model_selection=1)
+        self.paused = False
 
     def shift_image(self, img, dx, dy):
         img = np.roll(img, dy, axis=0)
@@ -146,14 +159,17 @@ class FakeCam:
 then scale & crop the image so that its pixels retain their aspect ratio."""
     def resize_image(self, img, keep_aspect):
         if self.width==0 or self.height==0:
-            raise RuntimeError("Camera dimensions error w={} h={}".format(self.width, self.height))
+            raise RuntimeError("Camera dimensions error w={} h={}".format(
+                self.width, self.height))
         if keep_aspect:
             imgheight, imgwidth,=img.shape[:2]
             scale=max(self.width/imgwidth, self.height/imgheight)
-            newimgwidth, newimgheight=int(np.floor(self.width/scale)), int(np.floor(self.height/scale))
+            newimgwidth, newimgheight=int(np.floor(self.width/scale)), int(
+                np.floor(self.height/scale))
             ix0=int(np.floor(0.5*imgwidth-0.5*newimgwidth))
             iy0=int(np.floor(0.5*imgheight-0.5*newimgheight))
-            img = cv2.resize(img[iy0:iy0+newimgheight, ix0:ix0+newimgwidth, :], (self.width, self.height))
+            img = cv2.resize(img[iy0:iy0+newimgheight, ix0:ix0+newimgwidth, :],
+                             (self.width, self.height))
         else:
             img = cv2.resize(img, (self.width, self.height))
         return img
@@ -164,7 +180,8 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
         background = cv2.imread(self.background_image)
         if background is not None:
             if not self.tiling:
-                background = self.resize_image(background, self.background_keep_aspect)
+                background = self.resize_image(background,
+                                               self.background_keep_aspect)
             else:
                 sizey, sizex = background.shape[0], background.shape[1]
                 if sizex > self.width and sizey > self.height:
@@ -178,7 +195,8 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
         else:
             background_video = cv2.VideoCapture(self.background_image)
             if not background_video.isOpened():
-                raise RuntimeError("Couldn't open video '{}'".format(self.background_image))
+                raise RuntimeError("Couldn't open video '{}'".format(
+                    self.background_image))
             self.bg_video_fps = background_video.get(cv2.CAP_PROP_FPS)
             # Initiate current fps to background video fps
             self.current_fps = self.bg_video_fps
@@ -191,10 +209,14 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
                     return self.resize_image(frame, self.background_keep_aspect)
             def next_frame():
                 while True:
-                    advrate=self.bg_video_fps/self.current_fps # Number of frames we need to advance background movie. Fractional.
+                    # Number of frames we need to advance background movie,
+                    # fractional.
+                    advrate=self.bg_video_fps/self.current_fps
                     if advrate<1:
-                        # Number of frames<1 so to avoid movie freezing randomly choose whether to advance by one frame with correct probability.
-                        self.bg_video_adv_rate=1 if np.random.uniform()<advrate else 0
+                        # Number of frames<1 so to avoid movie freezing randomly
+                        # choose whether to advance by one frame with correct
+                        # probability.
+                        self.bg_video_adv_rate = 1 if np.random.uniform() < advrate else 0
                     else:
                         # Just round to nearest number of frames when >=1.
                         self.bg_video_adv_rate = round(advrate)
@@ -228,12 +250,13 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
             if y % (bandLength+bandGap) < bandLength:
                 holo[y,:,:] = holo[y,:,:] * np.random.uniform(0.1, 0.3)
         # add some ghosting
-        holo_blur = cv2.addWeighted(holo, 0.2, self.shift_image(holo.copy(), 5, 5), 0.8, 0)
-        holo_blur = cv2.addWeighted(holo_blur, 0.4, self.shift_image(holo.copy(), -5, -5), 0.6, 0)
+        holo_blur = cv2.addWeighted(holo, 0.2, self.shift_image(
+            holo.copy(), 5, 5), 0.8, 0)
+        holo_blur = cv2.addWeighted(holo_blur, 0.4, self.shift_image(
+            holo.copy(), -5, -5), 0.6, 0)
         # combine with the original color, oversaturated
         out = cv2.addWeighted(img, 0.5, holo_blur, 0.6, 0)
         return out
-
 
     def compose_frame(self, frame):
         frame.flags.writeable = False
@@ -244,24 +267,29 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
         if self.no_background is False:
             background_frame = next(self.images["background"])
         else:
-            background_frame = cv2.blur(frame, (self.background_blur, self.background_blur), cv2.BORDER_DEFAULT)
+            background_frame = cv2.blur(frame,
+                                        (self.background_blur,
+                                         self.background_blur),
+                                        cv2.BORDER_DEFAULT)
 
         frame.flags.writeable = True
-        
+
         # Add hologram to foreground
         if self.hologram:
             frame = self.hologram_effect(frame)
-            
+
         # Replace background
         for c in range(frame.shape[2]):
-            frame[:, :, c] = frame[:, :, c] * mask + background_frame[:, :, c] * (1 - mask)
+            frame[:, :, c] = frame[:, :, c] * mask + \
+                background_frame[:, :, c] * (1 - mask)
 
         # Add foreground if needed
         if self.use_foreground and self.foreground_image is not None:
             for c in range(frame.shape[2]):
                 frame[:, :, c] = (
                     frame[:, :, c] * self.images["inverted_foreground_mask"] +
-                    self.images["foreground"][:, :, c] * self.images["foreground_mask"]
+                    self.images["foreground"][:, :, c] *
+                    self.images["foreground_mask"]
                     )
 
         return frame
@@ -274,21 +302,48 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
         t0 = time.monotonic()
         print_fps_period = 1
         frame_count = 0
+        blank_image = None
         while True:
-            frame = self.real_cam.read()
-            if frame is None:
-                time.sleep(0.1)
-                continue
-            frame = self.compose_frame(frame)
-            self.put_frame(frame)
-            frame_count += 1
-            td = time.monotonic() - t0
-            if td > print_fps_period:
-                self.current_fps = frame_count / td
-                print("FPS: {:6.2f}".format(self.current_fps), end="\r")
-                frame_count = 0
-                t0 = time.monotonic()
+            if not self.paused:
+                if self.real_cam is None:
+                    self.real_cam = RealCam(self.webcam_path,
+                                self.width,
+                                self.height,
+                                self.fps,
+                                self.codec)
+                frame = self.real_cam.read()
+                if frame is None:
+                    time.sleep(0.1)
+                    continue
+                frame = self.compose_frame(frame)
+                self.put_frame(frame)
+                frame_count += 1
+                td = time.monotonic() - t0
+                if td > print_fps_period:
+                    self.current_fps = frame_count / td
+                    print("FPS: {:6.2f}".format(self.current_fps), end="\r")
+                    frame_count = 0
+                    t0 = time.monotonic()
+            else:
+                width = 0
+                height = 0
+                if self.real_cam is not None:
+                    frame = self.real_cam.read()
+                    self.real_cam = None
+                    if blank_image is not None:
+                        blank_image.flags.writeable = True
+                    blank_image = np.zeros(frame.shape, dtype=np.uint8)
+                    blank_image.flags.writeable = False
+                self.put_frame(blank_image)
+                time.sleep(1)
 
+    def toggle_pause(self):
+        self.paused = not self.paused
+        if self.paused:
+            print("\nPaused.")
+        else:
+            print("\nResuming, reloading background / foreground images...")
+            self.load_images()
 
 def parse_args():
     parser = ArgumentParser(description="Faking your webcam background under \
@@ -331,11 +386,10 @@ def parse_args():
     return parser.parse_args()
 
 def sigint_handler(cam, signal, frame):
-    print("Reloading background / foreground images")
-    cam.load_images()
+    cam.toggle_pause()
 
 def sigquit_handler(cam, signal, frame):
-    print("Killing fake cam process")
+    print("\nKilling fake cam process")
     sys.exit(0)
 
 def getNextOddNumber(number):
@@ -356,7 +410,6 @@ def main():
         use_foreground=not args.no_foreground,
         hologram=args.hologram,
         tiling=args.tile_background,
-        socket="",
         background_image=findFile(args.background_image, args.image_folder),
         foreground_image=findFile(args.foreground_image, args.image_folder),
         foreground_mask_image=findFile(args.foreground_mask_image, args.image_folder),
@@ -365,7 +418,7 @@ def main():
     signal.signal(signal.SIGINT, partial(sigint_handler, cam))
     signal.signal(signal.SIGQUIT, partial(sigquit_handler, cam))
     print("Running...")
-    print("Please CTRL-C to reload the background / foreground images")
+    print("Please CTRL-C to pause and reload the background / foreground images")
     print("Please CTRL-\ to exit")
     # frames forever
     cam.run()

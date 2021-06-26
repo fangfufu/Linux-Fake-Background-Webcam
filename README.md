@@ -189,8 +189,11 @@ The files that you might want to replace are the followings:
   - ``foreground.jpg`` - the foreground image
   - ``foreground-mask.jpg`` - the foreground image mask
 
-If you want to change the files above in the middle of streaming, replace them
-and press ``CTRL-C``
+You can pause the background replacement process, and trigger the fake webcam
+to output a black image at 1 FPS by pressing ``CTRL-C``. This reduces the CPU
+usage while you are not using the fake webcam. You can unpause by pressing
+``CTRL-C`` again. This also reload the files listed above. This allows you to
+replace them without restarting the program.
 
 Note that animated background is supported. You can use any video file that can
 be read by OpenCV.

@@ -244,7 +244,7 @@ be read by OpenCV.
     --hologram            Add a hologram effect
 
 ## License
-The soure code of this file are released under GPLv3.
+The source code of this repository are released under GPLv3.
 
     Linux Fake Background Webcam
     Copyright (C) 2020-2021  Fufu Fang

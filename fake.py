@@ -103,7 +103,7 @@ class RealCam:
     def read(self):
         if self.frame is None:
             return None
-        return self.frame
+        return copy.deepcopy(self.frame)
 
     def stop(self):
         self.stopped = True

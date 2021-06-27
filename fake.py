@@ -16,6 +16,8 @@ import threading
 import mediapipe as mp
 import copy
 
+lock = threading.Lock()
+
 def findFile(pattern, path):
     for root, _, files in os.walk(path):
         for name in files:
@@ -35,7 +37,6 @@ class RealCam:
         self.cam = cv2.VideoCapture(src, cv2.CAP_V4L2)
         self.stopped = False
         self.frame = None
-        self.lock = threading.Lock()
         self.get_camera_values("original")
         c1, c2, c3, c4 = get_codec_args_from_string(codec)
         self._set_codec(cv2.VideoWriter_fourcc(c1, c2, c3, c4))
@@ -96,14 +97,13 @@ class RealCam:
         while not self.stopped:
             grabbed, frame = self.cam.read()
             if grabbed:
-                with self.lock:
+                with lock:
                     self.frame = copy.deepcopy(frame)
 
     def read(self):
-        with self.lock:
-            if self.frame is None:
-               return None
-            return copy.deepcopy(self.frame)
+        if self.frame is None:
+            return None
+        return self.frame
 
     def stop(self):
         self.stopped = True
@@ -298,7 +298,8 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
         print_fps_period = 1
         frame_count = 0
         while True:
-            frame = self.real_cam.read()
+            with lock:
+                frame = self.real_cam.read()
             if frame is None:
                 time.sleep(0.1)
                 continue

@@ -13,6 +13,9 @@ import os
 import fnmatch
 import time
 import mediapipe as mp
+import copy
+
+lock = threading.Lock()
 
 def findFile(pattern, path):
     for root, _, files in os.walk(path):
@@ -32,6 +35,8 @@ def _log_camera_property_not_set(prop, value):
 class RealCam:
     def __init__(self, src, frame_width, frame_height, frame_rate, codec):
         self.cam = cv2.VideoCapture(src, cv2.CAP_V4L2)
+        self.stopped = False
+        self.frame = None
         self.get_camera_values("original")
         c1, c2, c3, c4 = get_codec_args_from_string(codec)
         self._set_codec(cv2.VideoWriter_fourcc(c1, c2, c3, c4))
@@ -84,14 +89,28 @@ class RealCam:
     def get_frame_rate(self):
         return int(self.cam.get(cv2.CAP_PROP_FPS))
 
-    def read(self):
-        while True:
+    def start(self):
+        self.thread = threading.Thread(target=self.update)
+        self.thread.start()
+        return self
+
+    def update(self):
+        while not self.stopped:
             grabbed, frame = self.cam.read()
-            if not grabbed:
-                continue
-            return frame
+            if grabbed:
+                with lock:
+                    self.frame = copy.deepcopy(frame)
 
+    def read(self):
+        if self.frame is None:
+            return None
+        return self.frame
 
+    def stop(self):
+        self.stopped = True
+        self.thread.join()
+
+        
 class FakeCam:
     def __init__(
         self,
@@ -311,7 +330,8 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
                                 self.height,
                                 self.fps,
                                 self.codec)
-                frame = self.real_cam.read()
+                with lock:
+                    frame = self.real_cam.read()
                 if frame is None:
                     time.sleep(0.1)
                     continue
@@ -344,6 +364,7 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
         else:
             print("\nResuming, reloading background / foreground images...")
             self.load_images()
+
 
 def parse_args():
     parser = ArgumentParser(description="Faking your webcam background under \

@@ -13,6 +13,7 @@ import os
 import fnmatch
 import time
 import mediapipe as mp
+import copy
 
 def findFile(pattern, path):
     for root, _, files in os.walk(path):
@@ -84,12 +85,27 @@ class RealCam:
     def get_frame_rate(self):
         return int(self.cam.get(cv2.CAP_PROP_FPS))
 
-    def read(self):
-        while True:
+    def start(self):
+        self.thread = threading.Thread(target=self.update)
+        self.thread.start()
+        return self
+
+    def update(self):
+        while not self.stopped:
             grabbed, frame = self.cam.read()
-            if not grabbed:
-                continue
-            return frame
+            if grabbed:
+                with self.lock:
+                    self.frame = copy.deepcopy(frame)
+
+    def read(self):
+        with self.lock:
+            if self.frame is None:
+               return None
+            return copy.deepcopy(self.frame)
+
+    def stop(self):
+        self.stopped = True
+        self.thread.join()
 
 
 class FakeCam:

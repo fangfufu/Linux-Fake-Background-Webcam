@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from inotify_simple import INotify, flags
 import itertools
 import signal
 import sys
@@ -110,6 +111,7 @@ class FakeCam:
         foreground_mask_image: str,
         webcam_path: str,
         v4l2loopback_path: str,
+        ondemand: bool,
     ) -> None:
         self.no_background = no_background
         self.use_foreground = use_foreground
@@ -141,6 +143,9 @@ class FakeCam:
         self.classifier = mp.solutions.selfie_segmentation.SelfieSegmentation(
             model_selection=1)
         self.paused = False
+        self.ondemand = ondemand
+        self.v4l2loopback_path = v4l2loopback_path
+        self.consumers = 0
 
     def shift_image(self, img, dx, dy):
         img = np.roll(img, dy, axis=0)
@@ -303,7 +308,30 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
         print_fps_period = 1
         frame_count = 0
         blank_image = None
+
+        inotify = INotify(nonblocking=True)
+        if self.ondemand:
+            watch_flags = flags.CREATE | flags.OPEN | flags.CLOSE_NOWRITE| flags.CLOSE_WRITE
+            wd = inotify.add_watch(self.v4l2loopback_path, watch_flags)
+            self.paused=True
+
         while True:
+            if self.ondemand:
+                for event in inotify.read(0):
+                    for flag in flags.from_mask(event.mask):
+                        if flag == flags.CLOSE_NOWRITE or flag == flags.CLOSE_WRITE:
+                            self.consumers -=1
+                        if flag == flags.OPEN:
+                            self.consumers +=1
+                    if self.consumers > 0:
+                       self.paused=False
+                       self.load_images()
+                       print("Consumers:" , self.consumers)
+                    else:
+                       self.consumers = 0
+                       self.paused=True
+                       print("No consumers remaining, paused")
+
             if not self.paused:
                 if self.real_cam is None:
                     self.real_cam = RealCam(self.webcam_path,
@@ -383,6 +411,8 @@ def parse_args():
                         help="Foreground mask image path")
     parser.add_argument("--hologram", action="store_true",
                         help="Add a hologram effect")
+    parser.add_argument("--ondemand", action="store_true",
+                        help="Automatically disable processing when no consumers are present")
     return parser.parse_args()
 
 def sigint_handler(cam, signal, frame):
@@ -414,7 +444,8 @@ def main():
         foreground_image=findFile(args.foreground_image, args.image_folder),
         foreground_mask_image=findFile(args.foreground_mask_image, args.image_folder),
         webcam_path=args.webcam_path,
-        v4l2loopback_path=args.v4l2loopback_path)
+        v4l2loopback_path=args.v4l2loopback_path,
+        ondemand=args.ondemand)
     signal.signal(signal.SIGINT, partial(sigint_handler, cam))
     signal.signal(signal.SIGQUIT, partial(sigquit_handler, cam))
     print("Running...")

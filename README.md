@@ -189,11 +189,14 @@ The files that you might want to replace are the followings:
   - ``foreground.jpg`` - the foreground image
   - ``foreground-mask.jpg`` - the foreground image mask
 
-You can pause the background replacement process, and trigger the fake webcam
-to output a black image at 1 FPS by pressing ``CTRL-C``. This reduces the CPU
-usage while you are not using the fake webcam. You can unpause by pressing
-``CTRL-C`` again. This also reload the files listed above. This allows you to
-replace them without restarting the program.
+By default this program uses on-demand processing. The program processes images
+from the real webcam only when there are programs using the fake webcam. If
+there are no programs reading from the fake webcam, this program disconnects the
+real webcam, pauses processing and outputs a black image at 1 FPS to reduce CPU
+usage. You can manually toggle between the paused/unpaused state by pressing
+``CTRL-C``. Unpausing the program also reload the files listed above. This
+allows you to replace them without restarting the program. You can disable the
+on-demand processing behaviour by specifying the ``--no-ondemand`` flag.
 
 Note that animated background is supported. You can use any video file that can
 be read by OpenCV.
@@ -207,7 +210,7 @@ be read by OpenCV.
                 [--no-background] [-b BACKGROUND_IMAGE] [--tile-background]
                 [--background-blur BACKGROUND_BLUR] [--background-keep-aspect]
                 [--no-foreground] [-f FOREGROUND_IMAGE]
-                [-m FOREGROUND_MASK_IMAGE] [--hologram]
+                [-m FOREGROUND_MASK_IMAGE] [--hologram] [--no-ondemand]
 
     Faking your webcam background under GNU/Linux. Please refer to:
     https://github.com/fangfufu/Linux-Fake-Background-Webcam
@@ -242,6 +245,7 @@ be read by OpenCV.
     -m FOREGROUND_MASK_IMAGE, --foreground-mask-image FOREGROUND_MASK_IMAGE
                             Foreground mask image path
     --hologram            Add a hologram effect
+    --no-ondemand         Continue processing when no consumers are present
 
 ## License
 The source code of this repository are released under GPLv3.

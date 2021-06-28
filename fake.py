@@ -411,8 +411,8 @@ def parse_args():
                         help="Foreground mask image path")
     parser.add_argument("--hologram", action="store_true",
                         help="Add a hologram effect")
-    parser.add_argument("--ondemand", action="store_true",
-                        help="Automatically disable processing when no consumers are present")
+    parser.add_argument("--no-ondemand", action="store_true",
+                        help="Continue processing when no consumers are present")
     return parser.parse_args()
 
 def sigint_handler(cam, signal, frame):
@@ -445,7 +445,7 @@ def main():
         foreground_mask_image=findFile(args.foreground_mask_image, args.image_folder),
         webcam_path=args.webcam_path,
         v4l2loopback_path=args.v4l2loopback_path,
-        ondemand=args.ondemand)
+        ondemand=not args.no_ondemand)
     signal.signal(signal.SIGINT, partial(sigint_handler, cam))
     signal.signal(signal.SIGQUIT, partial(sigquit_handler, cam))
     print("Running...")

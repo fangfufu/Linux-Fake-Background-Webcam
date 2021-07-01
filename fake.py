@@ -4,6 +4,7 @@ import itertools
 import signal
 import sys
 from argparse import ArgumentParser
+import argparse
 from functools import partial
 from typing import Any, Dict
 import cv2
@@ -14,6 +15,7 @@ import fnmatch
 import time
 import threading
 import mediapipe as mp
+import cmapy
 
 from akvcam import AkvCameraWriter
 
@@ -123,6 +125,8 @@ class FakeCam:
         background_keep_aspect: bool,
         use_foreground: bool,
         hologram: bool,
+        cmapy: str,
+        cmapy_bg: bool,
         tiling: bool,
         socket: str,
         background_image: str,
@@ -135,6 +139,8 @@ class FakeCam:
         self.no_background = no_background
         self.use_foreground = use_foreground
         self.hologram = hologram
+        self.cmapy = cmapy
+        self.cmapy_bg = cmapy_bg
         self.tiling = tiling
         self.background_blur = background_blur
         self.background_keep_aspect = background_keep_aspect
@@ -245,6 +251,9 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
                 foreground_mask, cv2.COLOR_BGR2GRAY)
             self.images["inverted_foreground_mask"] = 1 - self.images["foreground_mask"]
 
+    def cmapy_effect(self, img):
+        return cv2.applyColorMap(img, cmapy.cmap(self.cmapy))
+
     def hologram_effect(self, img):
         # add a blue tint
         holo = cv2.applyColorMap(img, cv2.COLORMAP_WINTER)
@@ -267,10 +276,14 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
 
         if self.hologram:
             frame = self.hologram_effect(frame)
+        if self.cmapy:
+            frame = self.cmapy_effect(frame)
 
         # Get background image
         if self.no_background is False:
             background_frame = next(self.images["background"])
+            if self.cmapy and self.cmapy_bg:
+                background_frame = self.cmapy_effect(background_frame)
         else:
             background_frame = cv2.blur(frame, (self.background_blur, self.background_blur), cv2.BORDER_DEFAULT)
         frame.flags.writeable = True
@@ -358,6 +371,12 @@ def parse_args():
                         help="Foreground mask image path")
     parser.add_argument("--hologram", action="store_true",
                         help="Add a hologram effect")
+    parser.add_argument("--gray", action="store_true",
+                        help="Add a grayscale effect")
+    parser.add_argument("--cmapy-bg", action="store_true",
+                        help="Apply colormap to background")
+    parser.add_argument("-M", "--cmapy", default="gist_yarg_r",
+                        help="Add color map")
     return parser.parse_args()
 
 
@@ -378,6 +397,9 @@ def getNextOddNumber(number):
 
 def main():
     args = parse_args()
+    cmapy = args.cmapy
+    if (args.gray):
+        cmapy = 'gist_yarg_r'
     cam = FakeCam(
         fps=args.fps,
         width=args.width,
@@ -388,6 +410,8 @@ def main():
         background_keep_aspect=args.background_keep_aspect,
         use_foreground=not args.no_foreground,
         hologram=args.hologram,
+        cmapy=cmapy,
+        cmapy_bg=args.cmapy_bg,
         tiling=args.tile_background,
         socket="",
         background_image=findFile(args.background_image, args.image_folder),

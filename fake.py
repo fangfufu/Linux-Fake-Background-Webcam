@@ -5,7 +5,6 @@ import itertools
 import signal
 import sys
 from argparse import ArgumentParser
-import argparse
 from functools import partial
 from typing import Any, Dict
 import cv2

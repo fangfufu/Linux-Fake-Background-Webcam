@@ -422,7 +422,7 @@ def parse_args():
                         help="Add a hologram effect")
     parser.add_argument("--no-ondemand", action="store_true",
                         help="Continue processing when no consumers are present")
-    parser.add_argument("--background-mask-update-speed", default="10", type=int,
+    parser.add_argument("--background-mask-update-speed", default="50", type=int,
                         help="Background mask update speed between 0 and 100 (default 10)")                    
     return parser.parse_args()
 

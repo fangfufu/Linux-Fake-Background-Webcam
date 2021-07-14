@@ -439,7 +439,7 @@ def getNextOddNumber(number):
     return number
 
 def getPercentage(number):
-    return min(max(int(number), 0), 100)
+    return min(max(number, 0), 100)
 
 # Converts the 0-1 value to a sigmoid going from zero to 1 in the same range
 def sigmoid(x, a=5., b=-10.):

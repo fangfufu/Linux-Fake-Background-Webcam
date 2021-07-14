@@ -270,9 +270,9 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
         frame.flags.writeable = False
 
         mask_exponential_average_alpha = self.mask_exponential_average_alpha
-        if self.old_mask is None:
+        if self.old_mask is None or mask_exponential_average_alpha == 1.:
             self.old_mask = self.classifier.process(frame).segmentation_mask
-        else:
+        elif mask_exponential_average_alpha:
             self.old_mask = self.classifier.process(frame).segmentation_mask * mask_exponential_average_alpha + self.old_mask * (1.0 - mask_exponential_average_alpha)
         mask =  self.old_mask
 

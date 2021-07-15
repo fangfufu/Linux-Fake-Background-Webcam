@@ -189,6 +189,14 @@ on-demand processing behaviour by specifying the ``--no-ondemand`` flag.
 Note that animated background is supported. You can use any video file that can
 be read by OpenCV.
 
+With the `--cmapy` option, any of the colormaps that are 
+[available](https://gitlab.com/cvejarano-oss/cmapy/blob/master/docs/colorize_all_examples.md)
+in the CMaPy package can be applied.
+
+`--cmapy-bg` applies the same colormap to the background.
+
+`--gray` is a shorthand for `--cmapy gist_yarg_r` - i.e. applies a grayscale effect 
+
 ### fake.py
 
 ``fakecam.py`` supports the following options:
@@ -202,6 +210,7 @@ usage: fake.py [-h] [-W WIDTH] [-H HEIGHT] [-F FPS] [-C CODEC]
                [--no-ondemand]
                [--background-mask-update-speed BACKGROUND_MASK_UPDATE_SPEED]
                [--use-sigmoid] [--threshold THRESHOLD] [--no-postprocess]
+               [--cmapy-bg] [--cmapy PROFILE] [--gray]
 
 Faking your webcam background under GNU/Linux. Please refer to:
 https://github.com/fangfufu/Linux-Fake-Background-Webcam
@@ -255,6 +264,10 @@ optional arguments:
                         as foreground (default: 75)
   --no-postprocess      Disable postprocessing (masking dilation and blurring)
                         (default: True)
+  -M CMAPY, --cmapy PRESET    Apply a colormap preset
+  --cmapy-bg            Apply colormap to background
+  --gray                Apply a grayscale effect, identical to --cmapy gist_yarg_r 
+                        
 ```
 ## License
 The source code of this repository are released under GPLv3.

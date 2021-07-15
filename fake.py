@@ -14,6 +14,7 @@ import os
 import fnmatch
 import time
 import mediapipe as mp
+import cmapy
 
 
 def findFile(pattern, path):
@@ -110,6 +111,8 @@ class FakeCam:
         background_keep_aspect: bool,
         use_foreground: bool,
         hologram: bool,
+        cmapy: str,
+        cmapy_bg: bool,
         tiling: bool,
         image_folder: str,
         background_image: str,
@@ -126,6 +129,8 @@ class FakeCam:
         self.no_background = no_background
         self.use_foreground = use_foreground
         self.hologram = hologram
+        self.cmapy = cmapy
+        self.cmapy_bg = cmapy_bg
         self.tiling = tiling
         self.background_blur = background_blur
         self.sigma = self.background_blur / background_blur_sigma_frac
@@ -291,6 +296,9 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
         out = cv2.addWeighted(img, 0.5, holo_blur, 0.6, 0)
         return out
 
+    def cmapy_effect(self, img):
+        return cv2.applyColorMap(img, cmapy.cmap(self.cmapy))
+
     def compose_frame(self, frame):
         mask = self.classifier.process(frame).segmentation_mask
 
@@ -316,10 +324,16 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
                                                  self.background_blur),
                                                 self.sigma,
                                                 borderType=cv2.BORDER_DEFAULT)
+        if self.cmapy and self.cmapy_bg:
+            background_frame = self.cmapy_effect(background_frame)
+
+        frame.flags.writeable = True
 
         # Add hologram to foreground
         if self.hologram:
             frame = self.hologram_effect(frame)
+        if self.cmapy:
+            frame = self.cmapy_effect(frame)
 
         # Replace background
         if self.use_sigmoid:
@@ -458,6 +472,12 @@ def parse_args():
                         help="Add a hologram effect")
     parser.add_argument("--no-ondemand", action="store_false",
                         help="Continue processing when no consumers are present")
+    parser.add_argument("--gray", action="store_true",
+                        help="Add a grayscale effect")
+    parser.add_argument("--cmapy-bg", action="store_true",
+                        help="Apply colormap to background")
+    parser.add_argument("-M", "--cmapy", default=None,
+                        help="Add color map")
     parser.add_argument("--background-mask-update-speed", default="50", type=int,
                         help="The running average percentage for background mask updates")
     parser.add_argument("--use-sigmoid", action="store_true",
@@ -499,6 +519,9 @@ def sigmoid(x, a=5., b=-10.):
 
 def main():
     args = parse_args()
+    cmapy = args.cmapy
+    if (args.gray):
+        cmapy = 'gist_yarg_r'
     cam = FakeCam(
         fps=args.fps,
         width=args.width,
@@ -510,6 +533,8 @@ def main():
         background_keep_aspect=args.background_keep_aspect,
         use_foreground=not args.no_foreground,
         hologram=args.hologram,
+        cmapy=cmapy,
+        cmapy_bg=args.cmapy_bg,
         tiling=args.tile_background,
         image_folder=args.image_folder,
         background_image=args.background_image,

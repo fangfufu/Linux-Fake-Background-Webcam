@@ -114,7 +114,8 @@ class FakeCam:
         ondemand: bool,
         background_mask_update_speed: int,
         use_sigmoid: bool,
-        threshold: int
+        threshold: int,
+        postprocess: bool
     ) -> None:
         self.no_background = no_background
         self.use_foreground = use_foreground
@@ -135,6 +136,7 @@ class FakeCam:
         self.MRAR = background_mask_update_speed
         self.use_sigmoid = use_sigmoid
         self.threshold = threshold
+        self.postprocess = postprocess
         self.real_cam = RealCam(self.webcam_path,
                                 self.width,
                                 self.height,
@@ -275,8 +277,13 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
     def compose_frame(self, frame):
         frame.flags.writeable = False
         mask = self.classifier.process(frame).segmentation_mask
+
         if self.threshold < 1:
             mask = (mask > self.threshold) * mask
+
+        if self.postprocess:
+            mask = cv2.dilate(mask, np.ones((5,5), np.uint8) , iterations=1)
+            mask = cv2.blur(mask.astype(float), (10,10))
 
         if self.MRAR < 1:
             if self.old_mask is None:
@@ -435,9 +442,11 @@ def parse_args():
     parser.add_argument("--background-mask-update-speed", default="50", type=int,
                         help="The running average percentage for background mask updates (default to 50)")
     parser.add_argument("--use-sigmoid", action="store_true",
-                        help="Force the mask to follow a sigmoid distribution, default to false")
+                        help="Force the mask to follow a sigmoid distribution, default to False")
     parser.add_argument("--threshold", default="75", type=int,
                         help="The minimum percentage threshold for accepting a pixel as foreground (default to 75)")
+    parser.add_argument("--no-postprocess", action="store_false",
+                        help="Disable postprocessing (masking dilation and blurring), default to False")
     return parser.parse_args()
 
 def sigint_handler(cam, signal, frame):
@@ -484,7 +493,8 @@ def main():
         ondemand=args.no_ondemand,
         background_mask_update_speed=getPercentageFloat(args.background_mask_update_speed),
         use_sigmoid=args.use_sigmoid,
-        threshold=getPercentageFloat(args.threshold)
+        threshold=getPercentageFloat(args.threshold),
+        postprocess=args.no_postprocess
         )
     signal.signal(signal.SIGINT, partial(sigint_handler, cam))
     signal.signal(signal.SIGQUIT, partial(sigquit_handler, cam))

@@ -212,7 +212,7 @@ be read by OpenCV.
                 [--no-foreground] [-f FOREGROUND_IMAGE]
                 [-m FOREGROUND_MASK_IMAGE] [--hologram] [--no-ondemand]
                 [--background-mask-update-speed BACKGROUND_MASK_UPDATE_SPEED]
-                [--use-sigmoid] [--threshold THRESHOLD]
+                [--use-sigmoid] [--threshold THRESHOLD] [--no-postprocess]
 
     Faking your webcam background under GNU/Linux. Please refer to:
     https://github.com/fangfufu/Linux-Fake-Background-Webcam
@@ -252,10 +252,12 @@ be read by OpenCV.
                             The running average percentage for background mask
                             updates (default to 50)
     --use-sigmoid         Force the mask to follow a sigmoid distribution,
-                            default to false
+                            default to False
     --threshold THRESHOLD
                             The minimum percentage threshold for accepting a pixel
                             as foreground (default to 75)
+    --no-postprocess      Disable postprocessing (masking dilation and
+                            blurring), default to False
 
 ## License
 The source code of this repository are released under GPLv3.

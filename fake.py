@@ -112,7 +112,8 @@ class FakeCam:
         webcam_path: str,
         v4l2loopback_path: str,
         ondemand: bool,
-        background_mask_update_speed: int
+        background_mask_update_speed: int,
+        use_sigmoid: bool
     ) -> None:
         self.no_background = no_background
         self.use_foreground = use_foreground
@@ -131,6 +132,7 @@ class FakeCam:
         self.old_mask = None
         # Mask Running Average Ratio
         self.MRAR = background_mask_update_speed / 100.
+        self.use_sigmoid = use_sigmoid
         self.real_cam = RealCam(self.webcam_path,
                                 self.width,
                                 self.height,
@@ -150,6 +152,7 @@ class FakeCam:
         self.ondemand = ondemand
         self.v4l2loopback_path = v4l2loopback_path
         self.consumers = 0
+        print(use_sigmoid)
 
     def shift_image(self, img, dx, dy):
         img = np.roll(img, dy, axis=0)
@@ -292,6 +295,9 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
             frame = self.hologram_effect(frame)
 
         # Replace background
+        if self.use_sigmoid:
+            mask = sigmoid(mask)
+
         for c in range(frame.shape[2]):
             frame[:, :, c] = frame[:, :, c] * mask + \
                 background_frame[:, :, c] * (1 - mask)
@@ -419,10 +425,12 @@ def parse_args():
                         help="Foreground mask image path")
     parser.add_argument("--hologram", action="store_true",
                         help="Add a hologram effect")
-    parser.add_argument("--no-ondemand", action="store_true",
+    parser.add_argument("--no-ondemand", action="store_false",
                         help="Continue processing when no consumers are present")
     parser.add_argument("--background-mask-update-speed", default="50", type=int,
-                        help="Background mask update speed between 0 and 100 (default 50)")
+                        help="Background mask update running average ratio (default 50)")
+    parser.add_argument("--use-sigmoid", action="store_true",
+                        help="Force the mask to follow a sigmoid distribution, default to false")
     return parser.parse_args()
 
 def sigint_handler(cam, signal, frame):
@@ -439,6 +447,14 @@ def getNextOddNumber(number):
 
 def getPercentage(number):
     return min(max(number, 0), 100)
+
+def sigmoid(x, a=5., b=-10.):
+    """
+    Converts the 0-1 value to a sigmoid going from zero to 1 in the same range
+    """
+    z = np.exp(a + b * x)
+    sig = 1 / (1 + z)
+    return sig
 
 def main():
     args = parse_args()
@@ -458,8 +474,10 @@ def main():
         foreground_mask_image=findFile(args.foreground_mask_image, args.image_folder),
         webcam_path=args.webcam_path,
         v4l2loopback_path=args.v4l2loopback_path,
-        ondemand=not args.no_ondemand,
-        background_mask_update_speed=getPercentage(args.background_mask_update_speed))
+        ondemand=args.no_ondemand,
+        background_mask_update_speed=getPercentage(args.background_mask_update_speed),
+        use_sigmoid=args.use_sigmoid
+        )
     signal.signal(signal.SIGINT, partial(sigint_handler, cam))
     signal.signal(signal.SIGQUIT, partial(sigquit_handler, cam))
     print("Running...")

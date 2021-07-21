@@ -113,7 +113,8 @@ class FakeCam:
         v4l2loopback_path: str,
         ondemand: bool,
         background_mask_update_speed: int,
-        use_sigmoid: bool
+        use_sigmoid: bool,
+        threshold: int
     ) -> None:
         self.no_background = no_background
         self.use_foreground = use_foreground
@@ -131,8 +132,9 @@ class FakeCam:
         self.codec = codec
         self.old_mask = None
         # Mask Running Average Ratio
-        self.MRAR = background_mask_update_speed / 100.
+        self.MRAR = background_mask_update_speed
         self.use_sigmoid = use_sigmoid
+        self.threshold = threshold
         self.real_cam = RealCam(self.webcam_path,
                                 self.width,
                                 self.height,
@@ -273,6 +275,9 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
     def compose_frame(self, frame):
         frame.flags.writeable = False
         mask = self.classifier.process(frame).segmentation_mask
+        if self.threshold < 1:
+            mask = (mask > self.threshold) * mask
+
         if self.MRAR < 1:
             if self.old_mask is None:
                 self.old_mask = mask
@@ -428,9 +433,11 @@ def parse_args():
     parser.add_argument("--no-ondemand", action="store_false",
                         help="Continue processing when no consumers are present")
     parser.add_argument("--background-mask-update-speed", default="50", type=int,
-                        help="Background mask update running average ratio (default 50)")
+                        help="The running average percentage for background mask updates (default to 50)")
     parser.add_argument("--use-sigmoid", action="store_true",
                         help="Force the mask to follow a sigmoid distribution, default to false")
+    parser.add_argument("--threshold", default="75", type=int,
+                        help="The minimum percentage threshold for accepting a pixel as foreground (default to 75)")
     return parser.parse_args()
 
 def sigint_handler(cam, signal, frame):
@@ -445,8 +452,8 @@ def getNextOddNumber(number):
         return number + 1
     return number
 
-def getPercentage(number):
-    return min(max(number, 0), 100)
+def getPercentageFloat(number):
+    return min(max(number, 0), 100) / 100.
 
 def sigmoid(x, a=5., b=-10.):
     """
@@ -475,8 +482,9 @@ def main():
         webcam_path=args.webcam_path,
         v4l2loopback_path=args.v4l2loopback_path,
         ondemand=args.no_ondemand,
-        background_mask_update_speed=getPercentage(args.background_mask_update_speed),
-        use_sigmoid=args.use_sigmoid
+        background_mask_update_speed=getPercentageFloat(args.background_mask_update_speed),
+        use_sigmoid=args.use_sigmoid,
+        threshold=getPercentageFloat(args.threshold)
         )
     signal.signal(signal.SIGINT, partial(sigint_handler, cam))
     signal.signal(signal.SIGQUIT, partial(sigquit_handler, cam))

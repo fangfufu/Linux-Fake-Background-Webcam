@@ -211,6 +211,8 @@ be read by OpenCV.
                 [--background-blur BACKGROUND_BLUR] [--background-keep-aspect]
                 [--no-foreground] [-f FOREGROUND_IMAGE]
                 [-m FOREGROUND_MASK_IMAGE] [--hologram] [--no-ondemand]
+                [--background-mask-update-speed BACKGROUND_MASK_UPDATE_SPEED]
+                [--use-sigmoid] [--threshold THRESHOLD]
 
     Faking your webcam background under GNU/Linux. Please refer to:
     https://github.com/fangfufu/Linux-Fake-Background-Webcam
@@ -246,6 +248,14 @@ be read by OpenCV.
                             Foreground mask image path
     --hologram            Add a hologram effect
     --no-ondemand         Continue processing when no consumers are present
+    --background-mask-update-speed BACKGROUND_MASK_UPDATE_SPEED
+                            The running average percentage for background mask
+                            updates (default to 50)
+    --use-sigmoid         Force the mask to follow a sigmoid distribution,
+                            default to false
+    --threshold THRESHOLD
+                            The minimum percentage threshold for accepting a pixel
+                            as foreground (default to 75)
 
 ## License
 The source code of this repository are released under GPLv3.

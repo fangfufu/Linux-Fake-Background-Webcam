@@ -115,9 +115,10 @@ that ``fake.py`` outputs to, and ``Akvcam (Capture device)`` is the "capture
 device", which is opened by the software that you want to use the virtual webcam
 with.
 
+You might have to specify the ``--no-ondemand`` flag when using Akvcam.
+
 For more information on configuring Akvcam, please refer to
 [Akvcam wiki](https://github.com/webcamoid/akvcam/wiki/Configure-the-cameras)
-
 
 ### Disabling UEFI Secure boot
 Both v4l2loopback and Akvcam require custom kernel module. This might not be possible 

@@ -106,6 +106,7 @@ class FakeCam:
         use_foreground: bool,
         hologram: bool,
         tiling: bool,
+        image_folder: str,
         background_image: str,
         foreground_image: str,
         foreground_mask_image: str,
@@ -123,6 +124,7 @@ class FakeCam:
         self.tiling = tiling
         self.background_blur = background_blur
         self.background_keep_aspect = background_keep_aspect
+        self.image_folder = image_folder
         self.background_image = background_image
         self.foreground_image = foreground_image
         self.foreground_mask_image = foreground_mask_image
@@ -193,7 +195,7 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
     def load_images(self):
         self.images: Dict[str, Any] = {}
 
-        background = cv2.imread(self.background_image)
+        background = cv2.imread(findFile(self.background_image, self.image_folder))
         if background is not None:
             if not self.tiling:
                 background = self.resize_image(background,
@@ -209,7 +211,7 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
                     background = background[0:self.height, 0:self.width]
             background = itertools.repeat(background)
         else:
-            background_video = cv2.VideoCapture(self.background_image)
+            background_video = cv2.VideoCapture(findFile(self.background_image, self.image_folder))
             if not background_video.isOpened():
                 raise RuntimeError("Couldn't open video '{}'".format(
                     self.background_image))
@@ -244,10 +246,10 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
         self.images["background"] = background
 
         if self.use_foreground and self.foreground_image is not None:
-            foreground = cv2.imread(self.foreground_image)
+            foreground = cv2.imread(findFile(self.foreground_image, self.image_folder))
             self.images["foreground"] = cv2.resize(foreground,
                                                     (self.width, self.height))
-            foreground_mask = cv2.imread(self.foreground_mask_image)
+            foreground_mask = cv2.imread(findFile(self.foreground_mask_image, self.image_folder))
             foreground_mask = cv2.normalize(
                 foreground_mask, None, alpha=0, beta=1,
                 norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
@@ -485,9 +487,10 @@ def main():
         use_foreground=not args.no_foreground,
         hologram=args.hologram,
         tiling=args.tile_background,
-        background_image=findFile(args.background_image, args.image_folder),
-        foreground_image=findFile(args.foreground_image, args.image_folder),
-        foreground_mask_image=findFile(args.foreground_mask_image, args.image_folder),
+        image_folder = args.image_folder,
+        background_image=args.background_image,
+        foreground_image=args.foreground_image,
+        foreground_mask_image=args.foreground_mask_image,
         webcam_path=args.webcam_path,
         v4l2loopback_path=args.v4l2loopback_path,
         ondemand=args.no_ondemand,

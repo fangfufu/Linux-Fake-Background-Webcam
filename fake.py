@@ -285,7 +285,7 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
 
         if self.postprocess:
             mask = cv2.dilate(mask, np.ones((5,5), np.uint8) , iterations=1)
-            mask = cv2.medianBlur(mask, 5)
+            mask = cv2.blur(mask.astype(float), (10,10))
 
         if self.MRAR < 1:
             if self.old_mask is None:
@@ -297,26 +297,10 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
         if self.no_background is False:
             background_frame = next(self.images["background"])
         else:
-
-            # copy frame by downscaling 
-            frameWidth = frame.shape[1]
-            frameHeight = frame.shape[0]
-
-            width = int(frameWidth * .25)
-            height = int(frameHeight * .25)
-            background_frame = cv2.resize(frame, (width, height), interpolation = cv2.INTER_LINEAR)
-
-            # apply background blur to resized frame
-            for i in range(1, self.background_blur, 2):
-                background_frame = cv2.GaussianBlur(background_frame,
-                    (i,i),
-                    cv2.BORDER_DEFAULT)
-                background_frame = cv2.GaussianBlur(background_frame,
-                    (i,i),
-                    cv2.BORDER_DEFAULT)
-
-            # re-expand background frame.
-            background_frame = cv2.resize(background_frame, (frameWidth, frameHeight), interpolation = cv2.INTER_AREA)
+            background_frame = cv2.blur(frame,
+                                        (self.background_blur,
+                                         self.background_blur),
+                                        cv2.BORDER_DEFAULT)
 
         frame.flags.writeable = True
 

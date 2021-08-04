@@ -35,37 +35,24 @@ the author has never really managed to get v4l2loopback to work with Microsoft
 Team. Therefore support for akvcam has been added.
 
 ### v4l2loopback
-If you are on Debian Buster, you can do the
-following:
+The v4l2loopback kernel module can be installed through the package manager of your Linux distribution or compiled from source following the instructions in the [v4l2loopback github repository](https://github.com/umlaeute/v4l2loopback).
 
-    sudo apt install v4l2loopback-dkms
+Once installed, the module needs to be loaded. This can be done manually for the current session by running
 
-I added module options for v4l2loopback by creating
-``/etc/modprobe.d/v4l2loopback.conf`` with the following content:
+	$ sudo modprobe v4l2loopback devices=1 exclusive_caps=1 video_nr=2 card_label="fake-cam"
+which will create a virtual video device `/dev/video2`, however, this will no persist past reboot. 
+(Note that the `exclusive_caps=1` option is required for programs such as Zoom and Chrome).
 
-    options v4l2loopback devices=1  exclusive_caps=1 video_nr=2 card_label="v4l2loopback"
+To create the virtual video device on startup, run the `v4l2loopback-install.sh` script to create `/etc/modules-load.d/v4l2loopback.conf` to load the module and `/etc/modprobe.d/linux-fake-background.conf` to configure the module.
 
-``exclusive_caps`` is required by some programs, e.g. Zoom and Chrome.
-``video_nr`` specifies which ``/dev/video*`` file is the v4l2loopback device.
-In this repository, I assume that ``/dev/video2`` is the virtual webcam, and
-``/dev/video0`` is the physical webcam.
-
-I also created ``/etc/modules-load.d/v4l2loopback.conf`` with the following content:
-
-    v4l2loopback
-
-This automatically loads v4l2loopback module at boot, with the specified module
-options.
+The camera will appear as `fake-cam` in your video source list.
 
 If you get an error like
 ```
 OSError: [Errno 22] Invalid argument
 ```
 
-when opening the webcam from Python, please try the latest version of
-v4l2loopback from the its
-[Github repository](https://github.com/umlaeute/v4l2loopback),
-as the version from your package manager may be too old.
+when opening the webcam from Python, please try the latest version of v4l2loopback from the its [Github repository](https://github.com/umlaeute/v4l2loopback), as the version from your package manager may be too old.
 
 #### Ubuntu 18.04
 If you are using Ubuntu 18.04, and if you want to use v4l2loopback, please compile

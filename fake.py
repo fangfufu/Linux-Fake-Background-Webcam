@@ -442,7 +442,7 @@ def parse_args():
                         supported.")
     parser.add_argument("--tile-background", action="store_true",
                         help="Tile the background image")
-    parser.add_argument("--background-blur", default="25", type=int,
+    parser.add_argument("--background-blur", default="5", type=int,
                         help="Set background blur level")
     parser.add_argument("--background-keep-aspect", action="store_true",
                         help="Crop background if needed to maintain aspect ratio")

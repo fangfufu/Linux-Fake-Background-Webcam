@@ -1,2 +1,2 @@
 #!/bin/bash
-pip3 install --user -r requirements.txt
+python3.7 -m pip install --user -r requirements.txt

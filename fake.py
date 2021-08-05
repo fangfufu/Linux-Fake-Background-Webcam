@@ -444,9 +444,9 @@ def parse_args():
                         supported.")
     parser.add_argument("--tile-background", action="store_true",
                         help="Tile the background image")
-    parser.add_argument("--background-blur", default="15", type=int, metavar='k',
+    parser.add_argument("--background-blur", default="21", type=int, metavar='k',
                         help="The gaussian bluring kernel size in pixels")
-    parser.add_argument("--background-blur-sigma-frac", default="6", type=int, metavar='frac',
+    parser.add_argument("--background-blur-sigma-frac", default="3", type=int, metavar='frac',
                         help="The fraction of the kernel size to use for the sigma value (ie. sigma = k / frac)")
     parser.add_argument("--background-keep-aspect", action="store_true",
                         help="Crop background if needed to maintain aspect ratio")

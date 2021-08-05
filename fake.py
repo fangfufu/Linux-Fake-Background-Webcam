@@ -4,7 +4,6 @@ from inotify_simple import INotify, flags
 import itertools
 import signal
 import sys
-from argparse import ArgumentParser
 import argparse
 from functools import partial
 from typing import Any, Dict
@@ -420,7 +419,7 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
 
 
 def parse_args():
-    parser = ArgumentParser(description="Faking your webcam background under \
+    parser = argparse.ArgumentParser(description="Faking your webcam background under \
                             GNU/Linux. Please refer to: \
                             https://github.com/fangfufu/Linux-Fake-Background-Webcam",
                             formatter_class=argparse.ArgumentDefaultsHelpFormatter)

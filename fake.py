@@ -5,6 +5,7 @@ import itertools
 import signal
 import sys
 from argparse import ArgumentParser
+import argparse
 from functools import partial
 from typing import Any, Dict
 import cv2
@@ -106,6 +107,7 @@ class FakeCam:
         codec: str,
         no_background: bool,
         background_blur: int,
+        background_blur_sigma_frac: int,
         background_keep_aspect: bool,
         use_foreground: bool,
         hologram: bool,
@@ -127,6 +129,7 @@ class FakeCam:
         self.hologram = hologram
         self.tiling = tiling
         self.background_blur = background_blur
+        self.sigma = self.background_blur / background_blur_sigma_frac
         self.background_keep_aspect = background_keep_aspect
         self.image_folder = image_folder
         self.background_image = background_image
@@ -310,11 +313,10 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
         if self.no_background is False:
             background_frame = next(self.images["background"])
         else:
-            sigma = self.background_blur / 6
             background_frame = cv2.GaussianBlur(frame,
                                                 (self.background_blur,
                                                  self.background_blur),
-                                                sigma,
+                                                self.sigma,
                                                 borderType=cv2.BORDER_DEFAULT)
 
         frame.flags.writeable = True
@@ -420,7 +422,8 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
 def parse_args():
     parser = ArgumentParser(description="Faking your webcam background under \
                             GNU/Linux. Please refer to: \
-                            https://github.com/fangfufu/Linux-Fake-Background-Webcam")
+                            https://github.com/fangfufu/Linux-Fake-Background-Webcam",
+                            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("-W", "--width", default=1280, type=int,
                         help="Set real webcam width")
     parser.add_argument("-H", "--height", default=720, type=int,
@@ -442,8 +445,10 @@ def parse_args():
                         supported.")
     parser.add_argument("--tile-background", action="store_true",
                         help="Tile the background image")
-    parser.add_argument("--background-blur", default="5", type=int,
-                        help="Set background blur level")
+    parser.add_argument("--background-blur", default="15", type=int, metavar='k',
+                        help="The gaussian bluring kernel size in pixels")
+    parser.add_argument("--background-blur-sigma-frac", default="6", type=int, metavar='frac',
+                        help="The fraction of the kernel size to use for the sigma value (ie. sigma = k / frac)")
     parser.add_argument("--background-keep-aspect", action="store_true",
                         help="Crop background if needed to maintain aspect ratio")
     parser.add_argument("--no-foreground", action="store_true",
@@ -458,13 +463,13 @@ def parse_args():
     parser.add_argument("--no-ondemand", action="store_false",
                         help="Continue processing when no consumers are present")
     parser.add_argument("--background-mask-update-speed", default="50", type=int,
-                        help="The running average percentage for background mask updates (default to 50)")
+                        help="The running average percentage for background mask updates")
     parser.add_argument("--use-sigmoid", action="store_true",
-                        help="Force the mask to follow a sigmoid distribution, default to False")
+                        help="Force the mask to follow a sigmoid distribution")
     parser.add_argument("--threshold", default="75", type=int,
-                        help="The minimum percentage threshold for accepting a pixel as foreground (default to 75)")
+                        help="The minimum percentage threshold for accepting a pixel as foreground")
     parser.add_argument("--no-postprocess", action="store_false",
-                        help="Disable postprocessing (masking dilation and blurring), default to False")
+                        help="Disable postprocessing (masking dilation and blurring)")
     return parser.parse_args()
 
 
@@ -505,6 +510,7 @@ def main():
         codec=args.codec,
         no_background=args.no_background,
         background_blur=getNextOddNumber(args.background_blur),
+        background_blur_sigma_frac=args.background_blur_sigma_frac,
         background_keep_aspect=args.background_keep_aspect,
         use_foreground=not args.no_foreground,
         hologram=args.hologram,

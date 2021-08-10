@@ -292,7 +292,6 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
         return out
 
     def compose_frame(self, frame):
-        frame.flags.writeable = False
         mask = self.classifier.process(frame).segmentation_mask
 
         if self.threshold < 1:
@@ -317,8 +316,6 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
                                                  self.background_blur),
                                                 self.sigma,
                                                 borderType=cv2.BORDER_DEFAULT)
-
-        frame.flags.writeable = True
 
         # Add hologram to foreground
         if self.hologram:

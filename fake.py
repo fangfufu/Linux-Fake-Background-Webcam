@@ -98,53 +98,30 @@ class RealCam:
 
 
 class FakeCam:
-    def __init__(
-        self,
-        fps: int,
-        width: int,
-        height: int,
-        codec: str,
-        no_background: bool,
-        background_blur: int,
-        background_blur_sigma_frac: int,
-        background_keep_aspect: bool,
-        use_foreground: bool,
-        hologram: bool,
-        tiling: bool,
-        image_folder: str,
-        background_image: str,
-        foreground_image: str,
-        foreground_mask_image: str,
-        webcam_path: str,
-        v4l2loopback_path: str,
-        ondemand: bool,
-        background_mask_update_speed: int,
-        use_sigmoid: bool,
-        threshold: int,
-        postprocess: bool
-    ) -> None:
-        self.no_background = no_background
-        self.use_foreground = use_foreground
-        self.hologram = hologram
-        self.tiling = tiling
-        self.background_blur = background_blur
-        self.sigma = self.background_blur / background_blur_sigma_frac
-        self.background_keep_aspect = background_keep_aspect
-        self.image_folder = image_folder
-        self.background_image = background_image
-        self.foreground_image = foreground_image
-        self.foreground_mask_image = foreground_mask_image
-        self.webcam_path = webcam_path
-        self.width = width
-        self.height = height
-        self.fps = fps
-        self.codec = codec
+    def __init__(self, args) -> None:
+        self.no_background = args.no_background
+        self.use_foreground = not args.no_foreground
+        self.hologram = args.hologram
+        self.tiling = args.tile_background
+        self.background_blur = getNextOddNumber(args.background_blur)
+        self.sigma = self.background_blur / args.background_blur_sigma_frac
+        self.background_keep_aspect = args.background_keep_aspect
+        self.image_folder = args.image_folder
+        self.background_image = args.background_image
+        self.foreground_image = args.foreground_image
+        self.foreground_mask_image = args.foreground_mask_image
+        self.webcam_path = args.webcam_path
+        self.width = args.width
+        self.height = args.height
+        self.fps = args.fps
+        self.codec = args.codec
         self.old_mask = None
         # Mask Running Average Ratio
-        self.MRAR = background_mask_update_speed
-        self.use_sigmoid = use_sigmoid
-        self.threshold = threshold
-        self.postprocess = postprocess
+        self.MRAR = getPercentageFloat(
+            args.background_mask_update_speed)
+        self.use_sigmoid = args.use_sigmoid
+        self.threshold = getPercentageFloat(args.threshold)
+        self.postprocess = args.no_postprocess
         self.real_cam = RealCam(self.webcam_path,
                                 self.width,
                                 self.height,
@@ -153,7 +130,8 @@ class FakeCam:
         # In case the real webcam does not support the requested mode.
         self.width = self.real_cam.get_frame_width()
         self.height = self.real_cam.get_frame_height()
-        self.fake_cam = pyfakewebcam.FakeWebcam(v4l2loopback_path, self.width,
+        self.v4l2loopback_path = args.v4l2loopback_path
+        self.fake_cam = pyfakewebcam.FakeWebcam(self.v4l2loopback_path, self.width,
                                                 self.height)
         self.foreground_mask = None
         self.inverted_foreground_mask = None
@@ -161,10 +139,8 @@ class FakeCam:
         self.classifier = mp.solutions.selfie_segmentation.SelfieSegmentation(
             model_selection=1)
         self.paused = False
-        self.ondemand = ondemand
-        self.v4l2loopback_path = v4l2loopback_path
+        self.ondemand = args.no_ondemand
         self.consumers = 0
-        print(use_sigmoid)
 
     def shift_image(self, img, dx, dy):
         img = np.roll(img, dy, axis=0)
@@ -499,31 +475,7 @@ def sigmoid(x, a=5., b=-10.):
 
 def main():
     args = parse_args()
-    cam = FakeCam(
-        fps=args.fps,
-        width=args.width,
-        height=args.height,
-        codec=args.codec,
-        no_background=args.no_background,
-        background_blur=getNextOddNumber(args.background_blur),
-        background_blur_sigma_frac=args.background_blur_sigma_frac,
-        background_keep_aspect=args.background_keep_aspect,
-        use_foreground=not args.no_foreground,
-        hologram=args.hologram,
-        tiling=args.tile_background,
-        image_folder=args.image_folder,
-        background_image=args.background_image,
-        foreground_image=args.foreground_image,
-        foreground_mask_image=args.foreground_mask_image,
-        webcam_path=args.webcam_path,
-        v4l2loopback_path=args.v4l2loopback_path,
-        ondemand=args.no_ondemand,
-        background_mask_update_speed=getPercentageFloat(
-            args.background_mask_update_speed),
-        use_sigmoid=args.use_sigmoid,
-        threshold=getPercentageFloat(args.threshold),
-        postprocess=args.no_postprocess
-    )
+    cam = FakeCam(args)
     signal.signal(signal.SIGINT, partial(sigint_handler, cam))
     signal.signal(signal.SIGQUIT, partial(sigquit_handler, cam))
     print("Running...")

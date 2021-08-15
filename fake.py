@@ -16,24 +16,6 @@ import time
 import mediapipe as mp
 
 
-def findFile(pattern, path):
-    for root, _, files in os.walk(path):
-        for name in files:
-            if fnmatch.fnmatch(name, pattern):
-                return os.path.join(root, name)
-    return None
-
-
-def get_codec_args_from_string(codec):
-    return (char for char in codec)
-
-
-def _log_camera_property_not_set(prop, value):
-    print("Cannot set camera property {} to {}. "
-          "Defaulting to auto-detected property set by opencv".format(prop,
-                                                                      value))
-
-
 class RealCam:
     def __init__(self, src, frame_width, frame_height, frame_rate, codec):
         self.cam = cv2.VideoCapture(src, cv2.CAP_V4L2)
@@ -471,6 +453,24 @@ def sigmoid(x, a=5., b=-10.):
     z = np.exp(a + b * x)
     sig = 1 / (1 + z)
     return sig
+
+
+def findFile(pattern, path):
+    for root, _, files in os.walk(path):
+        for name in files:
+            if fnmatch.fnmatch(name, pattern):
+                return os.path.join(root, name)
+    return None
+
+
+def get_codec_args_from_string(codec):
+    return (char for char in codec)
+
+
+def _log_camera_property_not_set(prop, value):
+    print("Cannot set camera property {} to {}. "
+          "Defaulting to auto-detected property set by opencv".format(prop,
+                                                                      value))
 
 
 def main():

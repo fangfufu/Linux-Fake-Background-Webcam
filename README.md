@@ -110,7 +110,7 @@ For more information on configuring Akvcam, please refer to
 ### Disabling UEFI Secure boot
 Both v4l2loopback and Akvcam require custom kernel module. This might not be possible 
 if you have secure boot enabled. Please refer to your device manufacturer's manual 
-on disabling secure boot. 
+on disabling secure boot.
 
 ### Python 3
 You will need Python 3. You need to have pip installed. Please make sure that
@@ -193,18 +193,16 @@ be read by OpenCV.
 
 ``fakecam.py`` supports the following options:
 ```
-usage: fake.py [-h] [-W WIDTH] [-H HEIGHT] [-F FPS] [-C CODEC]
-               [-w WEBCAM_PATH] [-v V4L2LOOPBACK_PATH] [-i IMAGE_FOLDER]
-               [--no-background] [-b BACKGROUND_IMAGE] [--tile-background]
-               [--background-blur k] [--background-blur-sigma-frac frac]
-               [--background-keep-aspect] [--no-foreground]
-               [-f FOREGROUND_IMAGE] [-m FOREGROUND_MASK_IMAGE] [--hologram]
-               [--no-ondemand]
-               [--background-mask-update-speed BACKGROUND_MASK_UPDATE_SPEED]
-               [--use-sigmoid] [--threshold THRESHOLD] [--no-postprocess]
+usage: fake.py [-h] [-W WIDTH] [-H HEIGHT] [-F FPS] [-C CODEC] [-w WEBCAM_PATH]
+               [-v V4L2LOOPBACK_PATH] [-i IMAGE_FOLDER] [--no-background] [-b BACKGROUND_IMAGE]
+               [--tile-background] [--background-blur k] [--background-blur-sigma-frac frac]
+               [--background-keep-aspect] [--no-foreground] [-f FOREGROUND_IMAGE]
+               [-m FOREGROUND_MASK_IMAGE] [--hologram] [--no-ondemand]
+               [--background-mask-update-speed BACKGROUND_MASK_UPDATE_SPEED] [--use-sigmoid]
+               [--threshold THRESHOLD] [--no-postprocess] [--select-model SELECT_MODEL]
 
-Faking your webcam background under GNU/Linux. Please refer to:
-https://github.com/fangfufu/Linux-Fake-Background-Webcam
+Faking your webcam background under GNU/Linux. Please refer to: https://github.com/fangfufu/Linux-
+Fake-Background-Webcam
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -220,41 +218,36 @@ optional arguments:
   -v V4L2LOOPBACK_PATH, --v4l2loopback-path V4L2LOOPBACK_PATH
                         V4l2loopback device path (default: /dev/video2)
   -i IMAGE_FOLDER, --image-folder IMAGE_FOLDER
-                        Folder which contains foreground and background images
-                        (default: .)
-  --no-background       Disable background image and blur the real background
-                        (default: False)
+                        Folder which contains foreground and background images (default: .)
+  --no-background       Disable background image and blur the real background (default: False)
   -b BACKGROUND_IMAGE, --background-image BACKGROUND_IMAGE
-                        Background image path, animated background is
-                        supported. (default: background.*)
+                        Background image path, animated background is supported. (default:
+                        background.*)
   --tile-background     Tile the background image (default: False)
-  --background-blur k   The gaussian bluring kernel size in pixels (default:
-                        21)
+  --background-blur k   The gaussian bluring kernel size in pixels (default: 21)
   --background-blur-sigma-frac frac
-                        The fraction of the kernel size to use for the sigma
-                        value (ie. sigma = k / frac) (default: 3)
+                        The fraction of the kernel size to use for the sigma value (ie. sigma = k /
+                        frac) (default: 3)
   --background-keep-aspect
-                        Crop background if needed to maintain aspect ratio
-                        (default: False)
+                        Crop background if needed to maintain aspect ratio (default: False)
   --no-foreground       Disable foreground image (default: False)
   -f FOREGROUND_IMAGE, --foreground-image FOREGROUND_IMAGE
                         Foreground image path (default: foreground.*)
   -m FOREGROUND_MASK_IMAGE, --foreground-mask-image FOREGROUND_MASK_IMAGE
-                        Foreground mask image path (default: foreground-
-                        mask.*)
+                        Foreground mask image path (default: foreground-mask.*)
   --hologram            Add a hologram effect (default: False)
-  --no-ondemand         Continue processing when no consumers are present
-                        (default: True)
+  --no-ondemand         Continue processing when no consumers are present (default: True)
   --background-mask-update-speed BACKGROUND_MASK_UPDATE_SPEED
-                        The running average percentage for background mask
-                        updates (default: 50)
-  --use-sigmoid         Force the mask to follow a sigmoid distribution
-                        (default: False)
+                        The running average percentage for background mask updates (default: 50)
+  --use-sigmoid         Force the mask to follow a sigmoid distribution (default: False)
   --threshold THRESHOLD
-                        The minimum percentage threshold for accepting a pixel
-                        as foreground (default: 75)
-  --no-postprocess      Disable postprocessing (masking dilation and blurring)
-                        (default: True)
+                        The minimum percentage threshold for accepting a pixel as foreground
+                        (default: 75)
+  --no-postprocess      Disable postprocessing (masking dilation and blurring) (default: True)
+  --select-model SELECT_MODEL
+                        Select the model for MediaPipe. For more information, please refer to
+                        https://github.com/fangfufu/Linux-Fake-Background-
+                        Webcam/issues/135#issuecomment-883361294 (default: 1)
 ```
 ## License
 The source code of this repository are released under GPLv3.

@@ -119,7 +119,7 @@ class FakeCam:
         self.inverted_foreground_mask = None
         self.images: Dict[str, Any] = {}
         self.classifier = mp.solutions.selfie_segmentation.SelfieSegmentation(
-            model_selection=1)
+            model_selection=args.select_model)
         self.paused = False
         self.ondemand = args.no_ondemand
         self.consumers = 0
@@ -424,6 +424,9 @@ def parse_args():
                         help="The minimum percentage threshold for accepting a pixel as foreground")
     parser.add_argument("--no-postprocess", action="store_false",
                         help="Disable postprocessing (masking dilation and blurring)")
+    parser.add_argument("--select-model", default="1", type=int,
+                        help="Select the model for MediaPipe. For more information, please refer to \
+https://github.com/fangfufu/Linux-Fake-Background-Webcam/issues/135#issuecomment-883361294")
     return parser.parse_args()
 
 
@@ -471,7 +474,6 @@ def _log_camera_property_not_set(prop, value):
     print("Cannot set camera property {} to {}. "
           "Defaulting to auto-detected property set by opencv".format(prop,
                                                                       value))
-
 
 def main():
     args = parse_args()

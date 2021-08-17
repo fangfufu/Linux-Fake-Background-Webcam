@@ -103,10 +103,12 @@ class FakeCam:
         self.use_sigmoid = args.use_sigmoid
         self.threshold = getPercentageFloat(args.threshold)
         self.postprocess = args.no_postprocess
-        self.ondemand = args.ondemand
+        self.ondemand = args.no_ondemand
         self.v4l2loopback_path = args.v4l2loopback_path
         self.classifier = mp.solutions.selfie_segmentation.SelfieSegmentation(
             model_selection=args.select_model)
+        self.cmap_bg = args.cmap_bg
+        self.cmap_person = args.cmap_person
 
         # These do not involve reading from args
         self.old_mask = None
@@ -249,9 +251,17 @@ class FakeCam:
                                                 self.sigma,
                                                 borderType=cv2.BORDER_DEFAULT)
 
+        # Apply colour map to the background
+        if self.cmap_bg:
+            background_frame = cv2.applyColorMap(background_frame, cmap(self.cmap_bg))
+
         # Add hologram to the person
         if self.hologram:
             frame = hologram_effect(frame)
+
+        # Apply colour map to the person
+        if self.cmap_person:
+            frame = cv2.applyColorMap(frame, cmap(self.cmap_person))
 
         # Replace background
         if self.use_sigmoid:
@@ -388,8 +398,8 @@ def parse_args():
                         help="Foreground mask image path")
     parser.add_argument("--hologram", action="store_true",
                         help="Add a hologram effect")
-    parser.add_argument("--ondemand", action="store_true",
-                        help="Pause processing when there is no application using the virtual webcam")
+    parser.add_argument("--no-ondemand", action="store_false",
+                        help="Continue processing when there is no application using the virtual webcam")
     parser.add_argument("--background-mask-update-speed", default="50", type=int,
                         help="The running average percentage for background mask updates")
     parser.add_argument("--use-sigmoid", action="store_true",
@@ -401,10 +411,11 @@ def parse_args():
     parser.add_argument("--select-model", default="1", type=int,
                         help="Select the model for MediaPipe. For more information, please refer to \
 https://github.com/fangfufu/Linux-Fake-Background-Webcam/issues/135#issuecomment-883361294")
-    parser.add_argument("--cmapy-bg", default=None, type=str,
+    parser.add_argument("--cmap-bg", default=None, type=str,
                         help="Apply colour map to background using cmapy")
-    parser.add_argument("--cmapy-person", default=None, type=str,
-                        help="Apply colour map to the person using cmapy")
+    parser.add_argument("--cmap-person", default=None, type=str,
+                        help="Apply colour map to the person using cmapy. For examples, please refer to \
+https://gitlab.com/cvejarano-oss/cmapy/blob/master/docs/colorize_all_examples.md")
     return parser.parse_args()
 
 

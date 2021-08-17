@@ -14,6 +14,7 @@ import os
 import fnmatch
 import time
 import mediapipe as mp
+from cmapy import cmap
 
 
 class RealCam:
@@ -97,13 +98,18 @@ class FakeCam:
         self.height = args.height
         self.fps = args.fps
         self.codec = args.codec
-        self.old_mask = None
-        # Mask Running Average Ratio
         self.MRAR = getPercentageFloat(
-            args.background_mask_update_speed)
+            args.background_mask_update_speed) # Mask Running Average Ratio
         self.use_sigmoid = args.use_sigmoid
         self.threshold = getPercentageFloat(args.threshold)
         self.postprocess = args.no_postprocess
+        self.ondemand = args.ondemand
+        self.v4l2loopback_path = args.v4l2loopback_path
+        self.classifier = mp.solutions.selfie_segmentation.SelfieSegmentation(
+            model_selection=args.select_model)
+
+        # These do not involve reading from args
+        self.old_mask = None
         self.real_cam = RealCam(self.webcam_path,
                                 self.width,
                                 self.height,
@@ -112,16 +118,12 @@ class FakeCam:
         # In case the real webcam does not support the requested mode.
         self.width = self.real_cam.get_frame_width()
         self.height = self.real_cam.get_frame_height()
-        self.v4l2loopback_path = args.v4l2loopback_path
         self.fake_cam = pyfakewebcam.FakeWebcam(self.v4l2loopback_path, self.width,
                                                 self.height)
         self.foreground_mask = None
         self.inverted_foreground_mask = None
         self.images: Dict[str, Any] = {}
-        self.classifier = mp.solutions.selfie_segmentation.SelfieSegmentation(
-            model_selection=args.select_model)
         self.paused = False
-        self.ondemand = args.no_ondemand
         self.consumers = 0
 
     def resize_image(self, img, keep_aspect):
@@ -247,7 +249,7 @@ class FakeCam:
                                                 self.sigma,
                                                 borderType=cv2.BORDER_DEFAULT)
 
-        # Add hologram to foreground
+        # Add hologram to the person
         if self.hologram:
             frame = hologram_effect(frame)
 
@@ -344,6 +346,7 @@ class FakeCam:
             print("\nResuming, reloading background / foreground images...")
             self.load_images()
 
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Faking your webcam background under \
                             GNU/Linux. Please refer to: \
@@ -385,8 +388,8 @@ def parse_args():
                         help="Foreground mask image path")
     parser.add_argument("--hologram", action="store_true",
                         help="Add a hologram effect")
-    parser.add_argument("--no-ondemand", action="store_false",
-                        help="Continue processing when no consumers are present")
+    parser.add_argument("--ondemand", action="store_true",
+                        help="Pause processing when there is no application using the virtual webcam")
     parser.add_argument("--background-mask-update-speed", default="50", type=int,
                         help="The running average percentage for background mask updates")
     parser.add_argument("--use-sigmoid", action="store_true",
@@ -398,7 +401,12 @@ def parse_args():
     parser.add_argument("--select-model", default="1", type=int,
                         help="Select the model for MediaPipe. For more information, please refer to \
 https://github.com/fangfufu/Linux-Fake-Background-Webcam/issues/135#issuecomment-883361294")
+    parser.add_argument("--cmapy-bg", default=None, type=str,
+                        help="Apply colour map to background using cmapy")
+    parser.add_argument("--cmapy-person", default=None, type=str,
+                        help="Apply colour map to the person using cmapy")
     return parser.parse_args()
+
 
 def shift_image(img, dx, dy):
     img = np.roll(img, dy, axis=0)
@@ -412,6 +420,7 @@ def shift_image(img, dx, dy):
     elif dx < 0:
         img[:, dx:] = 0
     return img
+
 
 def hologram_effect(img):
     # add a blue tint
@@ -430,20 +439,25 @@ def hologram_effect(img):
     out = cv2.addWeighted(img, 0.5, holo_blur, 0.6, 0)
     return out
 
+
 def sigint_handler(cam, signal, frame):
     cam.toggle_pause()
+
 
 def sigquit_handler(cam, signal, frame):
     print("\nKilling fake cam process")
     sys.exit(0)
+
 
 def getNextOddNumber(number):
     if number % 2 == 0:
         return number + 1
     return number
 
+
 def getPercentageFloat(number):
     return min(max(number, 0), 100) / 100.
+
 
 def sigmoid(x, a=5., b=-10.):
     """
@@ -453,6 +467,7 @@ def sigmoid(x, a=5., b=-10.):
     sig = 1 / (1 + z)
     return sig
 
+
 def findFile(pattern, path):
     for root, _, files in os.walk(path):
         for name in files:
@@ -460,13 +475,16 @@ def findFile(pattern, path):
                 return os.path.join(root, name)
     return None
 
+
 def get_codec_args_from_string(codec):
     return (char for char in codec)
+
 
 def _log_camera_property_not_set(prop, value):
     print("Cannot set camera property {} to {}. "
           "Defaulting to auto-detected property set by opencv".format(prop,
                                                                       value))
+
 
 def main():
     args = parse_args()

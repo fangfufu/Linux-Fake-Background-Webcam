@@ -411,11 +411,11 @@ def parse_args():
     parser.add_argument("--select-model", default="1", type=int,
                         help="Select the model for MediaPipe. For more information, please refer to \
 https://github.com/fangfufu/Linux-Fake-Background-Webcam/issues/135#issuecomment-883361294")
-    parser.add_argument("--cmap-bg", default=None, type=str,
-                        help="Apply colour map to background using cmapy")
     parser.add_argument("--cmap-person", default=None, type=str,
                         help="Apply colour map to the person using cmapy. For examples, please refer to \
 https://gitlab.com/cvejarano-oss/cmapy/blob/master/docs/colorize_all_examples.md")
+    parser.add_argument("--cmap-bg", default=None, type=str,
+                        help="Apply colour map to background using cmapy")
     return parser.parse_args()
 
 

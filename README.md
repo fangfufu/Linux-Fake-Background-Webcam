@@ -190,19 +190,22 @@ Note that animated background is supported. You can use any video file that can
 be read by OpenCV.
 
 ### fake.py
-
 ``fakecam.py`` supports the following options:
 ```
-usage: fake.py [-h] [-W WIDTH] [-H HEIGHT] [-F FPS] [-C CODEC] [-w WEBCAM_PATH]
-               [-v V4L2LOOPBACK_PATH] [-i IMAGE_FOLDER] [--no-background] [-b BACKGROUND_IMAGE]
-               [--tile-background] [--background-blur k] [--background-blur-sigma-frac frac]
-               [--background-keep-aspect] [--no-foreground] [-f FOREGROUND_IMAGE]
-               [-m FOREGROUND_MASK_IMAGE] [--hologram] [--no-ondemand]
-               [--background-mask-update-speed BACKGROUND_MASK_UPDATE_SPEED] [--use-sigmoid]
-               [--threshold THRESHOLD] [--no-postprocess] [--select-model SELECT_MODEL]
+usage: fake.py [-h] [-W WIDTH] [-H HEIGHT] [-F FPS] [-C CODEC]
+               [-w WEBCAM_PATH] [-v V4L2LOOPBACK_PATH] [-i IMAGE_FOLDER]
+               [--no-background] [-b BACKGROUND_IMAGE] [--tile-background]
+               [--background-blur k] [--background-blur-sigma-frac frac]
+               [--background-keep-aspect] [--no-foreground]
+               [-f FOREGROUND_IMAGE] [-m FOREGROUND_MASK_IMAGE] [--hologram]
+               [--no-ondemand]
+               [--background-mask-update-speed BACKGROUND_MASK_UPDATE_SPEED]
+               [--use-sigmoid] [--threshold THRESHOLD] [--no-postprocess]
+               [--select-model SELECT_MODEL] [--cmap-bg CMAP_BG]
+               [--cmap-person CMAP_PERSON]
 
-Faking your webcam background under GNU/Linux. Please refer to: https://github.com/fangfufu/Linux-
-Fake-Background-Webcam
+Faking your webcam background under GNU/Linux. Please refer to:
+https://github.com/fangfufu/Linux-Fake-Background-Webcam
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -218,36 +221,53 @@ optional arguments:
   -v V4L2LOOPBACK_PATH, --v4l2loopback-path V4L2LOOPBACK_PATH
                         V4l2loopback device path (default: /dev/video2)
   -i IMAGE_FOLDER, --image-folder IMAGE_FOLDER
-                        Folder which contains foreground and background images (default: .)
-  --no-background       Disable background image and blur the real background (default: False)
+                        Folder which contains foreground and background images
+                        (default: .)
+  --no-background       Disable background image and blur the real background
+                        (default: False)
   -b BACKGROUND_IMAGE, --background-image BACKGROUND_IMAGE
-                        Background image path, animated background is supported. (default:
-                        background.*)
+                        Background image path, animated background is
+                        supported. (default: background.*)
   --tile-background     Tile the background image (default: False)
-  --background-blur k   The gaussian bluring kernel size in pixels (default: 21)
+  --background-blur k   The gaussian bluring kernel size in pixels (default:
+                        21)
   --background-blur-sigma-frac frac
-                        The fraction of the kernel size to use for the sigma value (ie. sigma = k /
-                        frac) (default: 3)
+                        The fraction of the kernel size to use for the sigma
+                        value (ie. sigma = k / frac) (default: 3)
   --background-keep-aspect
-                        Crop background if needed to maintain aspect ratio (default: False)
+                        Crop background if needed to maintain aspect ratio
+                        (default: False)
   --no-foreground       Disable foreground image (default: False)
   -f FOREGROUND_IMAGE, --foreground-image FOREGROUND_IMAGE
                         Foreground image path (default: foreground.*)
   -m FOREGROUND_MASK_IMAGE, --foreground-mask-image FOREGROUND_MASK_IMAGE
-                        Foreground mask image path (default: foreground-mask.*)
+                        Foreground mask image path (default: foreground-
+                        mask.*)
   --hologram            Add a hologram effect (default: False)
-  --no-ondemand         Continue processing when no consumers are present (default: True)
+  --no-ondemand         Continue processing when there is no application using
+                        the virtual webcam (default: True)
   --background-mask-update-speed BACKGROUND_MASK_UPDATE_SPEED
-                        The running average percentage for background mask updates (default: 50)
-  --use-sigmoid         Force the mask to follow a sigmoid distribution (default: False)
+                        The running average percentage for background mask
+                        updates (default: 50)
+  --use-sigmoid         Force the mask to follow a sigmoid distribution
+                        (default: False)
   --threshold THRESHOLD
-                        The minimum percentage threshold for accepting a pixel as foreground
-                        (default: 75)
-  --no-postprocess      Disable postprocessing (masking dilation and blurring) (default: True)
+                        The minimum percentage threshold for accepting a pixel
+                        as foreground (default: 75)
+  --no-postprocess      Disable postprocessing (masking dilation and blurring)
+                        (default: True)
   --select-model SELECT_MODEL
-                        Select the model for MediaPipe. For more information, please refer to
-                        https://github.com/fangfufu/Linux-Fake-Background-
-                        Webcam/issues/135#issuecomment-883361294 (default: 1)
+                        Select the model for MediaPipe. For more information,
+                        please refer to
+                        https://github.com/fangfufu/Linux-Fake-Background-Webcam/issues/135#issuecomment-883361294
+                        (default: 1)
+  --cmap-person CMAP_PERSON
+                        Apply colour map to the person using cmapy. For
+                        examples, please refer to
+                        https://gitlab.com/cvejarano-oss/cmapy/blob/master/docs/colorize_all_examples.md
+                        (default: None)
+  --cmap-bg CMAP_BG     Apply colour map to background using cmapy (default:
+                        None)
 ```
 ## License
 The source code of this repository are released under GPLv3.

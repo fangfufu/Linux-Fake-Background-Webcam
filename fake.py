@@ -124,23 +124,12 @@ class FakeCam:
         self.ondemand = args.no_ondemand
         self.consumers = 0
 
-    def shift_image(self, img, dx, dy):
-        img = np.roll(img, dy, axis=0)
-        img = np.roll(img, dx, axis=1)
-        if dy > 0:
-            img[:dy, :] = 0
-        elif dy < 0:
-            img[dy:, :] = 0
-        if dx > 0:
-            img[:, :dx] = 0
-        elif dx < 0:
-            img[:, dx:] = 0
-        return img
-
-    """Rescale image to dimensions self.width, self.height. If keep_aspect is True
-then scale & crop the image so that its pixels retain their aspect ratio."""
-
     def resize_image(self, img, keep_aspect):
+        """ Rescale image to dimensions self.width, self.height.
+
+        If keep_aspect is True then scale & crop the image so that its pixels
+        retain their aspect ratio.
+        """
         if self.width == 0 or self.height == 0:
             raise RuntimeError("Camera dimensions error w={} h={}".format(
                 self.width, self.height))
@@ -232,23 +221,6 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
             self.images["inverted_foreground_mask"] = 1 - \
                 self.images["foreground_mask"]
 
-    def hologram_effect(self, img):
-        # add a blue tint
-        holo = cv2.applyColorMap(img, cv2.COLORMAP_WINTER)
-        # add a halftone effect
-        bandLength, bandGap = 3, 4
-        for y in range(holo.shape[0]):
-            if y % (bandLength + bandGap) < bandLength:
-                holo[y, :, :] = holo[y, :, :] * np.random.uniform(0.1, 0.3)
-        # add some ghosting
-        holo_blur = cv2.addWeighted(holo, 0.2, self.shift_image(
-            holo.copy(), 5, 5), 0.8, 0)
-        holo_blur = cv2.addWeighted(holo_blur, 0.4, self.shift_image(
-            holo.copy(), -5, -5), 0.6, 0)
-        # combine with the original color, oversaturated
-        out = cv2.addWeighted(img, 0.5, holo_blur, 0.6, 0)
-        return out
-
     def compose_frame(self, frame):
         mask = self.classifier.process(frame).segmentation_mask
 
@@ -277,7 +249,7 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
 
         # Add hologram to foreground
         if self.hologram:
-            frame = self.hologram_effect(frame)
+            frame = hologram_effect(frame)
 
         # Replace background
         if self.use_sigmoid:
@@ -372,7 +344,6 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
             print("\nResuming, reloading background / foreground images...")
             self.load_images()
 
-
 def parse_args():
     parser = argparse.ArgumentParser(description="Faking your webcam background under \
                             GNU/Linux. Please refer to: \
@@ -429,25 +400,50 @@ def parse_args():
 https://github.com/fangfufu/Linux-Fake-Background-Webcam/issues/135#issuecomment-883361294")
     return parser.parse_args()
 
+def shift_image(img, dx, dy):
+    img = np.roll(img, dy, axis=0)
+    img = np.roll(img, dx, axis=1)
+    if dy > 0:
+        img[:dy, :] = 0
+    elif dy < 0:
+        img[dy:, :] = 0
+    if dx > 0:
+        img[:, :dx] = 0
+    elif dx < 0:
+        img[:, dx:] = 0
+    return img
+
+def hologram_effect(img):
+    # add a blue tint
+    holo = cv2.applyColorMap(img, cv2.COLORMAP_WINTER)
+    # add a halftone effect
+    bandLength, bandGap = 3, 4
+    for y in range(holo.shape[0]):
+        if y % (bandLength + bandGap) < bandLength:
+            holo[y, :, :] = holo[y, :, :] * np.random.uniform(0.1, 0.3)
+    # add some ghosting
+    holo_blur = cv2.addWeighted(holo, 0.2, shift_image(
+        holo.copy(), 5, 5), 0.8, 0)
+    holo_blur = cv2.addWeighted(holo_blur, 0.4, shift_image(
+        holo.copy(), -5, -5), 0.6, 0)
+    # combine with the original color, oversaturated
+    out = cv2.addWeighted(img, 0.5, holo_blur, 0.6, 0)
+    return out
 
 def sigint_handler(cam, signal, frame):
     cam.toggle_pause()
 
-
 def sigquit_handler(cam, signal, frame):
     print("\nKilling fake cam process")
     sys.exit(0)
-
 
 def getNextOddNumber(number):
     if number % 2 == 0:
         return number + 1
     return number
 
-
 def getPercentageFloat(number):
     return min(max(number, 0), 100) / 100.
-
 
 def sigmoid(x, a=5., b=-10.):
     """
@@ -457,7 +453,6 @@ def sigmoid(x, a=5., b=-10.):
     sig = 1 / (1 + z)
     return sig
 
-
 def findFile(pattern, path):
     for root, _, files in os.walk(path):
         for name in files:
@@ -465,10 +460,8 @@ def findFile(pattern, path):
                 return os.path.join(root, name)
     return None
 
-
 def get_codec_args_from_string(codec):
     return (char for char in codec)
-
 
 def _log_camera_property_not_set(prop, value):
     print("Cannot set camera property {} to {}. "

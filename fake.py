@@ -103,7 +103,7 @@ class FakeCam:
         self.use_sigmoid = args.use_sigmoid
         self.threshold = getPercentageFloat(args.threshold)
         self.postprocess = args.no_postprocess
-        self.ondemand = args.no_ondemand
+        self.ondemand = not args.no_ondemand
         self.v4l2loopback_path = args.v4l2loopback_path
         self.classifier = mp.solutions.selfie_segmentation.SelfieSegmentation(
             model_selection=args.select_model)
@@ -398,7 +398,7 @@ def parse_args():
                         help="Foreground mask image path")
     parser.add_argument("--hologram", action="store_true",
                         help="Add a hologram effect")
-    parser.add_argument("--no-ondemand", action="store_false",
+    parser.add_argument("--no-ondemand", action="store_true",
                         help="Continue processing when there is no application using the virtual webcam")
     parser.add_argument("--background-mask-update-speed", default="50", type=int,
                         help="The running average percentage for background mask updates")

@@ -245,7 +245,7 @@ optional arguments:
                         mask.*)
   --hologram            Add a hologram effect (default: False)
   --no-ondemand         Continue processing when there is no application using
-                        the virtual webcam (default: True)
+                        the virtual webcam (default: False)
   --background-mask-update-speed BACKGROUND_MASK_UPDATE_SPEED
                         The running average percentage for background mask
                         updates (default: 50)

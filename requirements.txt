@@ -1,6 +1,6 @@
 numpy>=1.19.3
 opencv-python>=4.4.0.46
 pyfakewebcam>=0.1.0
-mediapipe==0.8.5
+mediapipe>=0.8.7.1
 inotify_simple>=1.2
 cmapy>=0.6.6

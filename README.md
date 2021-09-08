@@ -25,7 +25,7 @@ Recently Google released selfie segmentation support for
 [Mediapipe](https://github.com/google/mediapipe/releases/tag/v0.8.5). This
 repository has been updated to use Mediapipe for image segmentation. This
 significantly increased the performance. The older version of this repository
-is now stored in the ``bodypix`` branch. 
+is now stored in the ``bodypix`` branch.
 
 ## Prerequisite
 You need to install either v4l2loopback or akvcam. This repository was
@@ -39,8 +39,8 @@ The v4l2loopback kernel module can be installed through the package manager of y
 
 Once installed, the module needs to be loaded. This can be done manually for the current session by running
 
-	$ sudo modprobe v4l2loopback devices=1 exclusive_caps=1 video_nr=2 card_label="fake-cam"
-which will create a virtual video device `/dev/video2`, however, this will no persist past reboot. 
+    $ sudo modprobe v4l2loopback devices=1 exclusive_caps=1 video_nr=2 card_label="fake-cam"
+which will create a virtual video device `/dev/video2`, however, this will no persist past reboot.
 (Note that the `exclusive_caps=1` option is required for programs such as Zoom and Chrome).
 
 To create the virtual video device on startup, run the `v4l2loopback-install.sh` script to create `/etc/modules-load.d/v4l2loopback.conf` to load the module and `/etc/modprobe.d/linux-fake-background.conf` to configure the module.
@@ -56,7 +56,7 @@ when opening the webcam from Python, please try the latest version of v4l2loopba
 
 #### Ubuntu 18.04
 If you are using Ubuntu 18.04, and if you want to use v4l2loopback, please compile
-v4l2loopback from the source. You need to do the following: 
+v4l2loopback from the source. You need to do the following:
 1. Remove the ``v4l2loopback`` package
     - `sudo rmmod -r v4l2loopback`
     - `sudo apt-get remove v4l2loopback-dkms`
@@ -108,8 +108,8 @@ For more information on configuring Akvcam, please refer to
 [Akvcam wiki](https://github.com/webcamoid/akvcam/wiki/Configure-the-cameras)
 
 ### Disabling UEFI Secure boot
-Both v4l2loopback and Akvcam require custom kernel module. This might not be possible 
-if you have secure boot enabled. Please refer to your device manufacturer's manual 
+Both v4l2loopback and Akvcam require custom kernel module. This might not be possible
+if you have secure boot enabled. Please refer to your device manufacturer's manual
 on disabling secure boot.
 
 ### Python 3
@@ -170,6 +170,10 @@ In the terminal window, do the following (if using v4l2loopback) :
 
     python3 fake.py
 
+You configure it using a ini file, see `./config-example.ini`.
+To run with a config file, use the following command:
+
+    python3 fake.py -c ./config-example.ini
 
 The files that you might want to replace are the followings:
 
@@ -192,7 +196,7 @@ be read by OpenCV.
 ### fake.py
 ``fakecam.py`` supports the following options:
 ```
-usage: fake.py [-h] [-W WIDTH] [-H HEIGHT] [-F FPS] [-C CODEC]
+usage: fake.py [-h] [-c CONFIG] [-W WIDTH] [-H HEIGHT] [-F FPS] [-C CODEC]
                [-w WEBCAM_PATH] [-v V4L2LOOPBACK_PATH] [-i IMAGE_FOLDER]
                [--no-background] [-b BACKGROUND_IMAGE] [--tile-background]
                [--background-blur k] [--background-blur-sigma-frac frac]
@@ -209,6 +213,8 @@ https://github.com/fangfufu/Linux-Fake-Background-Webcam
 
 optional arguments:
   -h, --help            show this help message and exit
+  -c CONFIG, --config CONFIG
+                        Config file (default: None)
   -W WIDTH, --width WIDTH
                         Set real webcam width (default: 1280)
   -H HEIGHT, --height HEIGHT

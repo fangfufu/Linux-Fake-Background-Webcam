@@ -4,7 +4,7 @@ from inotify_simple import INotify, flags
 import itertools
 import signal
 import sys
-import argparse
+import configargparse
 from functools import partial
 from typing import Any, Dict
 import cv2
@@ -99,7 +99,7 @@ class FakeCam:
         self.fps = args.fps
         self.codec = args.codec
         self.MRAR = getPercentageFloat(
-            args.background_mask_update_speed) # Mask Running Average Ratio
+            args.background_mask_update_speed)  # Mask Running Average Ratio
         self.use_sigmoid = args.use_sigmoid
         self.threshold = getPercentageFloat(args.threshold)
         self.postprocess = args.no_postprocess
@@ -253,7 +253,8 @@ class FakeCam:
 
         # Apply colour map to the background
         if self.cmap_bg:
-            background_frame = cv2.applyColorMap(background_frame, cmap(self.cmap_bg))
+            background_frame = cv2.applyColorMap(
+                background_frame, cmap(self.cmap_bg))
 
         # Add hologram to the person
         if self.hologram:
@@ -358,10 +359,13 @@ class FakeCam:
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Faking your webcam background under \
+    parser = configargparse.ArgParser(description="Faking your webcam background under \
                             GNU/Linux. Please refer to: \
                             https://github.com/fangfufu/Linux-Fake-Background-Webcam",
-                            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+                            formatter_class=configargparse.ArgumentDefaultsHelpFormatter)
+
+    parser.add_argument("-c", "--config", is_config_file=True,
+                        help="Config file")
     parser.add_argument("-W", "--width", default=1280, type=int,
                         help="Set real webcam width")
     parser.add_argument("-H", "--height", default=720, type=int,

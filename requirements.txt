@@ -4,3 +4,4 @@ pyfakewebcam>=0.1.0
 mediapipe>=0.8.7.1
 inotify_simple>=1.2
 cmapy>=0.6.6
+ConfigArgParse>=1.5.0,==1.5.*

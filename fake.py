@@ -375,7 +375,7 @@ def parse_args():
                         help="V4l2loopback device path")
     parser.add_argument("--no-background", action="store_true",
                         help="Disable background image and blur the real background")
-    parser.add_argument("-b", "--background-image", default="background.*",
+    parser.add_argument("-b", "--background-image", default="background.jpg",
                         help="Background image path, animated background is \
                         supported.")
     parser.add_argument("--tile-background", action="store_true",
@@ -388,10 +388,10 @@ def parse_args():
                         help="Crop background if needed to maintain aspect ratio")
     parser.add_argument("--no-foreground", action="store_true",
                         help="Disable foreground image")
-    parser.add_argument("-f", "--foreground-image", default="foreground.*",
+    parser.add_argument("-f", "--foreground-image", default="foreground.jpg",
                         help="Foreground image path")
     parser.add_argument("-m", "--foreground-mask-image",
-                        default="foreground-mask.*",
+                        default="foreground-mask.png",
                         help="Foreground mask image path")
     parser.add_argument("--hologram", action="store_true",
                         help="Add a hologram effect")

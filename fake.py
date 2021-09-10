@@ -89,7 +89,6 @@ class FakeCam:
         self.background_blur = getNextOddNumber(args.background_blur)
         self.sigma = self.background_blur / args.background_blur_sigma_frac
         self.background_keep_aspect = args.background_keep_aspect
-        self.image_folder = args.image_folder
         self.background_image = args.background_image
         self.foreground_image = args.foreground_image
         self.foreground_mask_image = args.foreground_mask_image
@@ -153,8 +152,7 @@ class FakeCam:
     def load_images(self):
         self.images: Dict[str, Any] = {}
 
-        background = cv2.imread(
-            findFile(self.background_image, self.image_folder))
+        background = cv2.imread(self.background_image)
         if background is not None:
             if not self.tiling:
                 background = self.resize_image(background,
@@ -171,8 +169,7 @@ class FakeCam:
                     background = background[0:self.height, 0:self.width]
             background = itertools.repeat(background)
         else:
-            background_video = cv2.VideoCapture(
-                findFile(self.background_image, self.image_folder))
+            background_video = cv2.VideoCapture(self.background_image)
             if not background_video.isOpened():
                 raise RuntimeError("Couldn't open video '{}'".format(
                     self.background_image))
@@ -209,12 +206,10 @@ class FakeCam:
         self.images["background"] = background
 
         if self.use_foreground and self.foreground_image is not None:
-            foreground = cv2.imread(
-                findFile(self.foreground_image, self.image_folder))
+            foreground = cv2.imread(self.foreground_image)
             self.images["foreground"] = cv2.resize(foreground,
                                                    (self.width, self.height))
-            foreground_mask = cv2.imread(
-                findFile(self.foreground_mask_image, self.image_folder))
+            foreground_mask = cv2.imread(self.foreground_mask_image)
             foreground_mask = cv2.normalize(
                 foreground_mask, None, alpha=0, beta=1,
                 norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
@@ -378,8 +373,6 @@ def parse_args():
                         help="Set real webcam path")
     parser.add_argument("-v", "--v4l2loopback-path", default="/dev/video2",
                         help="V4l2loopback device path")
-    parser.add_argument("-i", "--image-folder", default=".",
-                        help="Folder which contains foreground and background images")
     parser.add_argument("--no-background", action="store_true",
                         help="Disable background image and blur the real background")
     parser.add_argument("-b", "--background-image", default="background.*",
@@ -481,14 +474,6 @@ def sigmoid(x, a=5., b=-10.):
     z = np.exp(a + b * x)
     sig = 1 / (1 + z)
     return sig
-
-
-def findFile(pattern, path):
-    for root, _, files in os.walk(path):
-        for name in files:
-            if fnmatch.fnmatch(name, pattern):
-                return os.path.join(root, name)
-    return None
 
 
 def get_codec_args_from_string(codec):

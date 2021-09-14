@@ -27,6 +27,10 @@ repository has been updated to use Mediapipe for image segmentation. This
 significantly increased the performance. The older version of this repository
 is now stored in the ``bodypix`` branch.
 
+The performance improvement introduced by
+[2f7d698](https://github.com/fangfufu/Linux-Fake-Background-Webcam/commit/2f7d6988a3275b8aa4cbc73bed8151666c5aedef)
+means that you can get at least 25FPS on an i7-4900MQ.
+
 ## Prerequisite
 You need to install either v4l2loopback or akvcam. This repository was
 originally written with v4l2loopback in mind. However, there has been report
@@ -35,15 +39,22 @@ the author has never really managed to get v4l2loopback to work with Microsoft
 Team. Therefore support for akvcam has been added.
 
 ### v4l2loopback
-The v4l2loopback kernel module can be installed through the package manager of your Linux distribution or compiled from source following the instructions in the [v4l2loopback github repository](https://github.com/umlaeute/v4l2loopback).
+The v4l2loopback kernel module can be installed through the package manager of
+your Linux distribution or compiled from source following the instructions in
+the [v4l2loopback github repository](https://github.com/umlaeute/v4l2loopback).
 
-Once installed, the module needs to be loaded. This can be done manually for the current session by running
+Once installed, the module needs to be loaded. This can be done manually for
+the current session by running
 
     $ sudo modprobe v4l2loopback devices=1 exclusive_caps=1 video_nr=2 card_label="fake-cam"
-which will create a virtual video device `/dev/video2`, however, this will no persist past reboot.
-(Note that the `exclusive_caps=1` option is required for programs such as Zoom and Chrome).
 
-To create the virtual video device on startup, run the `v4l2loopback-install.sh` script to create `/etc/modules-load.d/v4l2loopback.conf` to load the module and `/etc/modprobe.d/linux-fake-background.conf` to configure the module.
+which will create a virtual video device `/dev/video2`, however, this will no
+persist past reboot. (Note that the `exclusive_caps=1` option is required for
+programs such as Zoom and Chrome).
+
+To create the virtual video device on startup, run the `v4l2loopback-install.sh`
+script to create `/etc/modules-load.d/v4l2loopback.conf` to load the module and
+`/etc/modprobe.d/linux-fake-background.conf` to configure the module.
 
 The camera will appear as `fake-cam` in your video source list.
 
@@ -52,11 +63,14 @@ If you get an error like
 OSError: [Errno 22] Invalid argument
 ```
 
-when opening the webcam from Python, please try the latest version of v4l2loopback from the its [Github repository](https://github.com/umlaeute/v4l2loopback), as the version from your package manager may be too old.
+when opening the webcam from Python, please try the latest version of
+v4l2loopback from the its
+[Github repository](https://github.com/umlaeute/v4l2loopback), as the version
+from your package manager may be too old.
 
 #### Ubuntu 18.04
-If you are using Ubuntu 18.04, and if you want to use v4l2loopback, please compile
-v4l2loopback from the source. You need to do the following:
+If you are using Ubuntu 18.04, and if you want to use v4l2loopback, please
+compile v4l2loopback from the source. You need to do the following:
 1. Remove the ``v4l2loopback`` package
     - `sudo rmmod -r v4l2loopback`
     - `sudo apt-get remove v4l2loopback-dkms`
@@ -108,9 +122,9 @@ For more information on configuring Akvcam, please refer to
 [Akvcam wiki](https://github.com/webcamoid/akvcam/wiki/Configure-the-cameras)
 
 ### Disabling UEFI Secure boot
-Both v4l2loopback and Akvcam require custom kernel module. This might not be possible
-if you have secure boot enabled. Please refer to your device manufacturer's manual
-on disabling secure boot.
+Both v4l2loopback and Akvcam require custom kernel module. This might not be
+possible if you have secure boot enabled. Please refer to your device
+manufacturer's manual on disabling secure boot.
 
 ### Python 3
 You will need Python 3. You need to have pip installed. Please make sure that
@@ -197,16 +211,15 @@ be read by OpenCV.
 ``fakecam.py`` supports the following options:
 ```
 usage: fake.py [-h] [-c CONFIG] [-W WIDTH] [-H HEIGHT] [-F FPS] [-C CODEC]
-               [-w WEBCAM_PATH] [-v V4L2LOOPBACK_PATH] [-i IMAGE_FOLDER]
-               [--no-background] [-b BACKGROUND_IMAGE] [--tile-background]
-               [--background-blur k] [--background-blur-sigma-frac frac]
-               [--background-keep-aspect] [--no-foreground]
-               [-f FOREGROUND_IMAGE] [-m FOREGROUND_MASK_IMAGE] [--hologram]
-               [--no-ondemand]
+               [-w WEBCAM_PATH] [-v V4L2LOOPBACK_PATH] [--no-background]
+               [-b BACKGROUND_IMAGE] [--tile-background] [--background-blur k]
+               [--background-blur-sigma-frac frac] [--background-keep-aspect]
+               [--no-foreground] [-f FOREGROUND_IMAGE]
+               [-m FOREGROUND_MASK_IMAGE] [--hologram] [--no-ondemand]
                [--background-mask-update-speed BACKGROUND_MASK_UPDATE_SPEED]
                [--use-sigmoid] [--threshold THRESHOLD] [--no-postprocess]
-               [--select-model SELECT_MODEL] [--cmap-bg CMAP_BG]
-               [--cmap-person CMAP_PERSON]
+               [--select-model SELECT_MODEL] [--cmap-person CMAP_PERSON]
+               [--cmap-bg CMAP_BG]
 
 Faking your webcam background under GNU/Linux. Please refer to:
 https://github.com/fangfufu/Linux-Fake-Background-Webcam
@@ -226,14 +239,11 @@ optional arguments:
                         Set real webcam path (default: /dev/video0)
   -v V4L2LOOPBACK_PATH, --v4l2loopback-path V4L2LOOPBACK_PATH
                         V4l2loopback device path (default: /dev/video2)
-  -i IMAGE_FOLDER, --image-folder IMAGE_FOLDER
-                        Folder which contains foreground and background images
-                        (default: .)
   --no-background       Disable background image and blur the real background
                         (default: False)
   -b BACKGROUND_IMAGE, --background-image BACKGROUND_IMAGE
                         Background image path, animated background is
-                        supported. (default: background.*)
+                        supported. (default: background.jpg)
   --tile-background     Tile the background image (default: False)
   --background-blur k   The gaussian bluring kernel size in pixels (default:
                         21)
@@ -245,10 +255,10 @@ optional arguments:
                         (default: False)
   --no-foreground       Disable foreground image (default: False)
   -f FOREGROUND_IMAGE, --foreground-image FOREGROUND_IMAGE
-                        Foreground image path (default: foreground.*)
+                        Foreground image path (default: foreground.jpg)
   -m FOREGROUND_MASK_IMAGE, --foreground-mask-image FOREGROUND_MASK_IMAGE
                         Foreground mask image path (default: foreground-
-                        mask.*)
+                        mask.png)
   --hologram            Add a hologram effect (default: False)
   --no-ondemand         Continue processing when there is no application using
                         the virtual webcam (default: False)
@@ -264,16 +274,23 @@ optional arguments:
                         (default: True)
   --select-model SELECT_MODEL
                         Select the model for MediaPipe. For more information,
-                        please refer to
-                        https://github.com/fangfufu/Linux-Fake-Background-Webcam/issues/135#issuecomment-883361294
-                        (default: 1)
+                        please refer to https://github.com/fangfufu/Linux-
+                        Fake-Background-
+                        Webcam/issues/135#issuecomment-883361294 (default: 1)
   --cmap-person CMAP_PERSON
                         Apply colour map to the person using cmapy. For
                         examples, please refer to
-                        https://gitlab.com/cvejarano-oss/cmapy/blob/master/docs/colorize_all_examples.md
+                        https://gitlab.com/cvejarano-
+                        oss/cmapy/blob/master/docs/colorize_all_examples.md
                         (default: None)
   --cmap-bg CMAP_BG     Apply colour map to background using cmapy (default:
                         None)
+
+Args that start with '--' (eg. -W) can also be set in a config file (specified
+via -c). Config file syntax allows: key=value, flag=true, stuff=[a,b,c] (for
+details, see syntax at https://goo.gl/R74nmi). If an arg is specified in more
+than one place, then commandline values override config file values which
+override defaults.
 ```
 ## License
 The source code of this repository are released under GPLv3.

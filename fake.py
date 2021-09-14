@@ -224,17 +224,16 @@ class FakeCam:
         mask = self.classifier.process(frame).segmentation_mask
 
         if self.threshold < 1:
-            mask = (mask > self.threshold) * mask
+            cv2.threshold(mask, self.threshold, 1, cv2.THRESH_BINARY, dst=mask)
 
         if self.postprocess:
-            mask = cv2.dilate(mask, np.ones((5, 5), np.uint8), iterations=1)
-            mask = cv2.blur(mask.astype(float), (10, 10))
+            cv2.dilate(mask, np.ones((5, 5), np.uint8), iterations=1, dst=mask)
+            cv2.blur(mask, (10, 10), dst=mask)
 
         if self.MRAR < 1:
             if self.old_mask is None:
                 self.old_mask = mask
-            mask = mask * self.MRAR + self.old_mask * (1.0 - self.MRAR)
-            self.old_mask = mask
+            mask = cv2.accumulateWeighted(mask, self.old_mask, self.MRAR)
 
         # Get background image
         if self.no_background is False:
@@ -248,8 +247,8 @@ class FakeCam:
 
         # Apply colour map to the background
         if self.cmap_bg:
-            background_frame = cv2.applyColorMap(
-                background_frame, cmap(self.cmap_bg))
+            cv2.applyColorMap(background_frame, cmap(self.cmap_bg),
+                    dst=background_frame)
 
         # Add hologram to the person
         if self.hologram:
@@ -257,24 +256,19 @@ class FakeCam:
 
         # Apply colour map to the person
         if self.cmap_person:
-            frame = cv2.applyColorMap(frame, cmap(self.cmap_person))
+            cv2.applyColorMap(frame, cmap(self.cmap_person), dst=frame)
 
         # Replace background
         if self.use_sigmoid:
             mask = sigmoid(mask)
 
-        for c in range(frame.shape[2]):
-            frame[:, :, c] = frame[:, :, c] * mask + \
-                background_frame[:, :, c] * (1 - mask)
+        cv2.blendLinear(frame, background_frame, mask, 1 - mask, dst=frame)
 
         # Add foreground if needed
         if self.use_foreground and self.foreground_image is not None:
-            for c in range(frame.shape[2]):
-                frame[:, :, c] = (
-                    frame[:, :, c] * self.images["inverted_foreground_mask"] +
-                    self.images["foreground"][:, :, c] *
-                    self.images["foreground_mask"]
-                )
+            cv2.blendLinear(frame, self.images["foreground"],
+                    self.images["inverted_foreground_mask"],
+                    self.images["foreground_mask"], dst=frame)
 
         return frame
 

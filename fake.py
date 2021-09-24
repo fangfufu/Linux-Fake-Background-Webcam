@@ -159,6 +159,8 @@ class FakeCam:
 
         self.inotify = INotifyThread(self.v4l2loopback_path, self.load_images)
         self.running = True
+        self.paused = False
+        self.current_fps = 0
 
     def resize_image(self, img, keep_aspect):
         """ Rescale image to dimensions self.width, self.height.
@@ -323,7 +325,7 @@ class FakeCam:
             self.inotify.start()
 
         while self.running:
-            if not self.ondemand or not self.inotify.paused:
+            if (not self.ondemand or not self.inotify.paused) and not self.paused:
                 if self.real_cam is None:
                     self.real_cam = RealCam(self.webcam_path,
                                             self.width,
@@ -355,8 +357,8 @@ class FakeCam:
                 time.sleep(1)
 
     def toggle_pause(self):
-        self.inotify.paused = not self.inotify.paused
-        if self.inotify.paused:
+        self.paused = not self.paused
+        if self.paused:
             print("\nPaused.")
         else:
             print("\nResuming, reloading background / foreground images...")

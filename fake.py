@@ -10,10 +10,11 @@ from typing import Any, Dict
 import cv2
 import numpy as np
 import pyfakewebcam
+import os
+import fnmatch
 import time
 import mediapipe as mp
 from cmapy import cmap
-import threading
 
 
 class RealCam:
@@ -79,39 +80,6 @@ class RealCam:
             return frame
 
 
-class INotifyThread(threading.Thread):
-    def __init__(self, v4l2loopback_path, load_images):
-        super().__init__(name="inotify")
-        self.inotify = INotify(nonblocking=True)
-        watch_flags = flags.OPEN | flags.CLOSE_NOWRITE | flags.CLOSE_WRITE
-        self.wd = self.inotify.add_watch(v4l2loopback_path, watch_flags)
-        self.paused = False
-        self.consumers = 0
-        self.running = True
-        self.load_images = load_images
-
-    def run(self):
-        while self.running:
-            for event in self.inotify.read(0):
-                for flag in flags.from_mask(event.mask):
-                    if flag == flags.CLOSE_NOWRITE or flag == flags.CLOSE_WRITE:
-                        self.consumers -= 1
-                    if flag == flags.OPEN:
-                        self.consumers += 1
-            if self.consumers > 0:
-                self.paused = False
-                self.load_images()
-                print("Consumers:", self.consumers)
-            else:
-                self.consumers = 0
-                self.paused = True
-                print("No consumers remaining, paused")
-
-            time.sleep(1)
-
-        self.inotify.rm_watch(self.wd)
-
-
 class FakeCam:
     def __init__(self, args) -> None:
         self.no_background = args.no_background
@@ -156,11 +124,8 @@ class FakeCam:
         self.foreground_mask = None
         self.inverted_foreground_mask = None
         self.images: Dict[str, Any] = {}
-
-        self.inotify = INotifyThread(self.v4l2loopback_path, self.load_images)
-        self.running = True
         self.paused = False
-        self.current_fps = 0
+        self.consumers = 0
 
     def resize_image(self, img, keep_aspect):
         """ Rescale image to dimensions self.width, self.height.
@@ -310,10 +275,6 @@ class FakeCam:
     def put_frame(self, frame):
         self.fake_cam.schedule_frame(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
 
-    def quit(self):
-        self.running = False
-        self.inotify.running = False
-
     def run(self):
         self.load_images()
         t0 = time.monotonic()
@@ -321,11 +282,30 @@ class FakeCam:
         frame_count = 0
         blank_image = None
 
+        inotify = INotify(nonblocking=True)
         if self.ondemand:
-            self.inotify.start()
+            watch_flags = flags.CREATE | flags.OPEN | flags.CLOSE_NOWRITE | flags.CLOSE_WRITE
+            wd = inotify.add_watch(self.v4l2loopback_path, watch_flags)
+            self.paused = True
 
-        while self.running:
-            if (not self.ondemand or not self.inotify.paused) and not self.paused:
+        while True:
+            if self.ondemand:
+                for event in inotify.read(0):
+                    for flag in flags.from_mask(event.mask):
+                        if flag == flags.CLOSE_NOWRITE or flag == flags.CLOSE_WRITE:
+                            self.consumers -= 1
+                        if flag == flags.OPEN:
+                            self.consumers += 1
+                    if self.consumers > 0:
+                        self.paused = False
+                        self.load_images()
+                        print("Consumers:", self.consumers)
+                    else:
+                        self.consumers = 0
+                        self.paused = True
+                        print("No consumers remaining, paused")
+
+            if not self.paused:
                 if self.real_cam is None:
                     self.real_cam = RealCam(self.webcam_path,
                                             self.width,
@@ -346,6 +326,8 @@ class FakeCam:
                     frame_count = 0
                     t0 = time.monotonic()
             else:
+                width = 0
+                height = 0
                 if self.real_cam is not None:
                     frame = self.real_cam.read()
                     self.real_cam = None
@@ -466,7 +448,6 @@ def sigint_handler(cam, signal, frame):
 
 def sigquit_handler(cam, signal, frame):
     print("\nKilling fake cam process")
-    cam.quit()
     sys.exit(0)
 
 

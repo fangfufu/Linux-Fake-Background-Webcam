@@ -28,8 +28,8 @@ significantly increased the performance. The older version of this repository
 is now stored in the ``bodypix`` branch.
 
 The performance improvement introduced by
-[2f7d698](https://github.com/fangfufu/Linux-Fake-Background-Webcam/commit/2f7d6988a3275b8aa4cbc73bed8151666c5aedef)
-means that you can get at least 25FPS on an i7-4900MQ.
+[42c7b8f](https://github.com/fangfufu/Linux-Fake-Background-Webcam/commit/42c7b8f0f07a8ad0d8549e6af066d5c4780cce9c)
+means that you can get up to 30 FPS on an i7-4900MQ.
 
 ## Prerequisite
 You need to install either v4l2loopback or akvcam. This repository was

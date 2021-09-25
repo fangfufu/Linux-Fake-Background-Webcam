@@ -10,8 +10,6 @@ from typing import Any, Dict
 import cv2
 import numpy as np
 import pyfakewebcam
-import os
-import fnmatch
 import time
 import mediapipe as mp
 from cmapy import cmap

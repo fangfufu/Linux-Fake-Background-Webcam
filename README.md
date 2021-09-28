@@ -34,9 +34,8 @@ means that you can get at least 25FPS on an i7-4900MQ.
 ## Prerequisite
 You need to install either v4l2loopback or akvcam. This repository was
 originally written with v4l2loopback in mind. However, there has been report
-that v4l2loopback does not work with certain versions of Ubuntu. Additionally,
-the author has never really managed to get v4l2loopback to work with Microsoft
-Team. Therefore support for akvcam has been added.
+that v4l2loopback does not work with certain versions of Ubuntu. Therefore 
+support for akvcam has been added.
 
 ### v4l2loopback
 The v4l2loopback kernel module can be installed through the package manager of

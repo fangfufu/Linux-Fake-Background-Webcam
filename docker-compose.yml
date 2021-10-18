@@ -6,7 +6,6 @@ services:
         init: true
         build:
             context: ./
-        read_only: true
         volumes:
             - ${IMAGE_BACKGROUND}:/src/background-custom:ro
             - ${IMAGE_FOREGROUND}:/src/foreground-custom:ro

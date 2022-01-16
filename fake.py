@@ -115,8 +115,8 @@ class FakeCam:
                                 self.fps,
                                 self.codec)
         # In case the real webcam does not support the requested mode.
-        self.width = self.real_cam.get_frame_width()
-        self.height = self.real_cam.get_frame_height()
+        self.real_width = self.real_cam.get_frame_width()
+        self.real_height = self.real_cam.get_frame_height()
         self.fake_cam = pyfakewebcam.FakeWebcam(self.v4l2loopback_path, self.width,
                                                 self.height)
         self.foreground_mask = None
@@ -314,6 +314,8 @@ class FakeCam:
                 if frame is None:
                     time.sleep(0.1)
                     continue
+                if self.width != self.real_width or self.height != self.real_height:
+                    frame = cv2.resize(frame, (self.width, self.height))
                 frame = self.compose_frame(frame)
                 self.put_frame(frame)
                 frame_count += 1
@@ -327,11 +329,10 @@ class FakeCam:
                 width = 0
                 height = 0
                 if self.real_cam is not None:
-                    frame = self.real_cam.read()
                     self.real_cam = None
                     if blank_image is not None:
                         blank_image.flags.writeable = True
-                    blank_image = np.zeros(frame.shape, dtype=np.uint8)
+                    blank_image = np.zeros((self.height, self.width), dtype=np.uint8)
                     blank_image.flags.writeable = False
                 self.put_frame(blank_image)
                 time.sleep(1)

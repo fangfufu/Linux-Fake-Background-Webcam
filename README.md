@@ -2,8 +2,7 @@
 
 ## Background
 Video conferencing software support for background blurring and background
-replacement under Linux is relatively poor. The Linux version of Zoom only
-supports background replacement via chroma key. The Linux version of Microsoft
+replacement under Linux is relatively poor. The Linux version of Microsoft
 Team does not support background blur. Over at Webcamoid, we tried to figure out
 if we can do these reliably using open source software
 ([issues/250](https://github.com/webcamoid/webcamoid/issues/250)).

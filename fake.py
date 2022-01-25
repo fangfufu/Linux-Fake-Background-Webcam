@@ -107,8 +107,8 @@ class FakeCam:
         self.cmap_bg = args.cmap_bg
         self.cmap_person = args.cmap_person
         self.zoom = args.zoom
+        self.analysis_frequency = args.analysis_frequency
         
-
         # These do not involve reading from args
         self.old_mask = None
         self.real_cam = RealCam(self.webcam_path,
@@ -127,6 +127,8 @@ class FakeCam:
         self.classifier = mp.solutions.selfie_segmentation.SelfieSegmentation(model_selection=1)
         self.paused = False
         self.consumers = 0
+        self.frame_counter = 0
+        self.cached_mask = None
 
     def resize_image(self, img, keep_aspect):
         """ Rescale image to dimensions self.width, self.height.
@@ -279,11 +281,14 @@ class FakeCam:
         return resized_cropped
 
     def compose_frame(self, frame):
-
+        self.frame_counter += 1
         frame = self.paddedzoom(frame, self.zoom)
-        if self.no_background is False or self.background_blur > 1:
+        if (self.no_background is False or self.background_blur > 1) and (self.frame_counter % self.analysis_frequency == 0 or self.cached_mask is None):
             mask = self.classifier.process(frame).segmentation_mask
+            self.cached_mask = mask
             #print("test {} {}", self.no_background, self.background_blur)
+        elif (self.no_background is False or self.background_blur > 1):
+            mask = self.cached_mask
         else:
             return frame
         # Get background image
@@ -461,6 +466,8 @@ https://github.com/fangfufu/Linux-Fake-Background-Webcam/issues/135#issuecomment
 https://gitlab.com/cvejarano-oss/cmapy/blob/master/docs/colorize_all_examples.md")
     parser.add_argument("--cmap-bg", default=None, type=str,
                         help="Apply colour map to background using cmapy")
+    parser.add_argument("-a", "--analysis-frequency", default=5, type=int,
+                        help="The analysis-frequency to use for the background -default 5")
     return parser.parse_args()
 
 

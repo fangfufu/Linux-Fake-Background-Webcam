@@ -109,6 +109,7 @@ class FakeCam:
         foreground_mask_image: str,
         webcam_path: str,
         v4l2loopback_path: str,
+        zoom: int,
     ) -> None:
         self.no_background = no_background
         self.use_foreground = use_foreground
@@ -127,6 +128,7 @@ class FakeCam:
         self.foreground_mask = None
         self.inverted_foreground_mask = None
         self.images: Dict[str, Any] = {}
+        self.zoom = zoom
         self.classifier = mp.solutions.selfie_segmentation.SelfieSegmentation(model_selection=1)
 
     def shift_image(self, img, dx, dy):
@@ -234,12 +236,44 @@ then scale & crop the image so that its pixels retain their aspect ratio."""
         out = cv2.addWeighted(img, 0.5, holo_blur, 0.6, 0)
         return out
 
+    def paddedzoom(self, image, scale=150):
+    
+        '''
+        Zoom in/out an image while keeping the input image shape.
+        i.e., zero pad when factor<1, clip out when factor>1.
+        there is another version below (paddedzoom2)
+        '''
+
+        #get the webcam size
+        height, width, channels = image.shape
+
+        #prepare the crop
+        centerY,centerX=int(height/2),int(width/2)
+        radiusY,radiusX= int(scale*(height/2)/100),int(scale*(width/2)/100)
+        # print(f'centerX: {centerX}')
+        # print(f"centerY: {centerY}")
+        # print(f'radiusX: {radiusX}')
+        # print(f"radiusY: {radiusY}")
+        # print(f"width: {width}")
+        # print(f"height:  {height}")
+        minX,maxX=centerX-radiusX,centerX+radiusX
+        # print(f"minX: {minX}")
+        # print(f"maxX: {maxX}")
+        minY,maxY=centerY-radiusY,centerY+radiusY
+        # print(f"minY: {minY}")
+        # print(f"maxY: {maxY}")
+        cropped = image[minY:maxY, minX:maxX]
+        resized_cropped = cv2.resize(cropped, (width, height))
+        return resized_cropped
 
     def compose_frame(self, frame):
-        frame.flags.writeable = False
 
-        mask =  self.classifier.process(frame).segmentation_mask
-
+        frame = self.paddedzoom(frame, self.zoom)
+        if self.no_background is False or self.background_blur > 1:
+            mask = self.classifier.process(frame).segmentation_mask
+            #print("test {} {}", self.no_background, self.background_blur)
+        else:
+            return frame
         # Get background image
         if self.no_background is False:
             background_frame = next(self.images["background"])
@@ -328,6 +362,8 @@ def parse_args():
                         help="Foreground mask image path")
     parser.add_argument("--hologram", action="store_true",
                         help="Add a hologram effect")
+    parser.add_argument("--zoom", default="200", type=int,
+                        help="Add zoom to your image")
     return parser.parse_args()
 
 def sigint_handler(cam, signal, frame):
@@ -361,7 +397,8 @@ def main():
         foreground_image=findFile(args.foreground_image, args.image_folder),
         foreground_mask_image=findFile(args.foreground_mask_image, args.image_folder),
         webcam_path=args.webcam_path,
-        v4l2loopback_path=args.v4l2loopback_path)
+        v4l2loopback_path=args.v4l2loopback_path,
+        zoom=args.zoom)
     signal.signal(signal.SIGINT, partial(sigint_handler, cam))
     signal.signal(signal.SIGQUIT, partial(sigquit_handler, cam))
     print("Running...")

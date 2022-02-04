@@ -145,7 +145,7 @@ class FakeCam:
                              (self.width, self.height))
         else:
             img = cv2.resize(img, (self.width, self.height))
-        return img
+        return np.flip(img, axis=1)
 
     def load_images(self):
         self.images: Dict[str, Any] = {}

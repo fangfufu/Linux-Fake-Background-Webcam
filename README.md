@@ -46,7 +46,7 @@ the current session by running
 
     $ sudo modprobe v4l2loopback devices=1 exclusive_caps=1 video_nr=2 card_label="fake-cam"
 
-which will create a virtual video device `/dev/video2`, however, this will no
+which will create a virtual video device `/dev/video2`, however, this will not
 persist past reboot. (Note that the `exclusive_caps=1` option is required for
 programs such as Zoom and Chrome).
 

@@ -1,0 +1,26 @@
+# systemd user unit file for Linux-Fake-Background-Webcam
+# place this file into a location suitable for user-defined systemd units
+# (e.g $HOME/.config/systemd/user)
+#
+# To enable and run the fakecam service, run
+# systemctl --user enable fakecam.service
+# systemctl --user start fakecam.service
+
+[Unit]
+Description=Fake camera
+After=network.target
+
+[Service]
+Type=simple
+# specify working directory such as Git project directory
+# %h expands to the $HOME directory of the user running the service
+WorkingDirectory=%h/devel/fangfufu/Linux-Fake-Background-Webcam
+# you can use command line options here, or point the script
+# to your config file
+ExecStart=python3 fake.py -c %h/.config/fakecam/config.ini
+# fake.py exits when pressing Ctrl + \ which corresponds to SIGQUIT
+# so we need to specify this kill signal instead of SIGINT
+KillSignal=SIGQUIT
+
+[Install]
+WantedBy=default.target

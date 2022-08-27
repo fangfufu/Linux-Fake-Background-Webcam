@@ -291,6 +291,22 @@ details, see syntax at https://goo.gl/R74nmi). If an arg is specified in more
 than one place, then commandline values override config file values which
 override defaults.
 ```
+
+### Per-user systemd service
+Copy the systemd service file from `systemd-user` folder to a location
+suitable for user-defined systemd services (typically
+`$HOME/.config/systemd/user`).
+
+Modify the `WorkingDirectory` directive to point to the location of the
+installation, and `ExecStart` directive to configure how `fake.py` is run.
+
+To start the service and enable it so that it is run after login, run the
+following (as normal user):
+```
+$ systemctl --user start fakecam.service
+$ systemctl --user enable fakecam.service
+```
+
 ## License
 The source code of this repository are released under GPLv3.
 

@@ -5,4 +5,4 @@ mediapipe>=0.8.7.1
 inotify_simple>=1.2
 cmapy>=0.6.6
 ConfigArgParse>=1.5.0,==1.5.*
-protobuf==3.20.1
+protobuf==3.20.2

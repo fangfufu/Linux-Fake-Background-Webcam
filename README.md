@@ -66,6 +66,16 @@ v4l2loopback from the its
 [Github repository](https://github.com/umlaeute/v4l2loopback), as the version
 from your package manager may be too old.
 
+### v4l2loopback-ctl
+
+You can also use `v4l2loopback-ctl` to control virtual video device.
+
+To add a virtual video device, use `sudo v4l2loopback-ctl add --exclusive-caps=1 --name="fake-cam" /dev/video2`.
+
+To remove a virtual video device, use `sudo v4l2loopback-ctl delete /dev/video2`.
+
+To list available virtual video devices, use `sudo v4l2loopback-ctl list`.
+
 #### Ubuntu 18.04
 If you are using Ubuntu 18.04, and if you want to use v4l2loopback, please
 compile v4l2loopback from the source. You need to do the following:

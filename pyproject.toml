@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "fake-cam"
+version = "0.1.0"
+description = "Fake webcam"
+authors = ["Martin Shetty <1972005+martukas@users.noreply.github.com>"]
+
+[tool.poetry.dependencies]
+python = ">=3.9"
+numpy = ">=1.19.3"
+opencv-python = ">=4.4.0.46"
+pyfakewebcam = ">=0.1.0"
+mediapipe = ">=0.8.7.1"
+inotify_simple = ">=1.2"
+cmapy = ">=0.6.6"
+configargparse = ">=1.5.0,<1.6.dev0"
+protobuf = "3.20.2"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

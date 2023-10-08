@@ -10,11 +10,6 @@ if [ "$#" -ne 0 ]; then
  VIDEO_NR="$1"
 fi
 
-#echo "VIDEO_NR = ${VIDEO_NR}"
-#OPT_FILE2="./testfile.txt"
-#echo "options v4l2loopback devices=1 exclusive_caps=1 video_nr=${VIDEO_NR} card_label=\"fake-cam\"" > $OPT_FILE2
-#exit 1
-
 # check if running as root
 if [[ $EUID -ne 0 ]]; then
    echo "This script must be run as root"

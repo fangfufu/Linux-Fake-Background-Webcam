@@ -44,7 +44,9 @@ the [v4l2loopback github repository](https://github.com/umlaeute/v4l2loopback).
 Once installed, the module needs to be loaded. This can be done manually for
 the current session by running
 
-    $ sudo modprobe v4l2loopback devices=1 exclusive_caps=1 video_nr=2 card_label="fake-cam"
+```shell
+sudo modprobe v4l2loopback devices=1 exclusive_caps=1 video_nr=2 card_label="fake-cam"
+```
 
 which will create a virtual video device `/dev/video2`, however, this will not
 persist past reboot. (Note that the `exclusive_caps=1` option is required for
@@ -53,6 +55,24 @@ programs such as Zoom and Chrome).
 To create the virtual video device on startup, run the `v4l2loopback-install.sh`
 script to create `/etc/modules-load.d/v4l2loopback.conf` to load the module and
 `/etc/modprobe.d/linux-fake-background.conf` to configure the module.
+
+You can provide the video device number you want to use as an argument to this installation script. For example, if you run `v4l2-ctl --list-devices` and get something like this:
+
+```text
+Integrated Camera: Integrated C (usb-0000:00:14.0-4):
+	/dev/video0
+	/dev/video1
+	/dev/video2
+	/dev/video3
+	/dev/media0
+	/dev/media1
+```
+
+You would want to run the command as follows to use the next available device number:
+
+```shell
+./v4l2loopback-install.sh 4
+```
 
 The camera will appear as `fake-cam` in your video source list.
 
@@ -63,7 +83,7 @@ OSError: [Errno 22] Invalid argument
 
 when opening the webcam from Python, please try the latest version of
 v4l2loopback from the its
-[Github repository](https://github.com/umlaeute/v4l2loopback), as the version
+[GitHub repository](https://github.com/umlaeute/v4l2loopback), as the version
 from your package manager may be too old.
 
 ### v4l2loopback-ctl
@@ -173,9 +193,18 @@ You can then upgrade pip by running:
     pip3 install --upgrade pip
 
 ## Installation
-The actual installation can be done by simply running
 
-    ./install.sh
+You may install python dependencies to your system with:
+
+```shell
+./install.sh
+```
+
+but it is probably better than you only install them to a local virtual environment with [poetry](https://python-poetry.org/docs/):
+
+```shell
+poetry install
+```
 
 ### Installing with Docker
 The use of Docker is no longer supported. I no longer see any reason for using
@@ -191,12 +220,22 @@ images on-the-fly is unsupported when running under Docker.
 ## Usage
 In the terminal window, do the following (if using v4l2loopback) :
 
-    python3 fake.py
+```shell
+python3 fake.py
+```
+
+of, if you installed the poetry environment, with:
+
+```shell
+poetry run fake.py
+```
 
 You configure it using a ini file, see `./config-example.ini`.
 To run with a config file, use the following command:
 
-    python3 fake.py -c ./config-example.ini
+```shell
+poetry run fake.py -c ./config-example.ini
+```
 
 The files that you might want to replace are the followings:
 

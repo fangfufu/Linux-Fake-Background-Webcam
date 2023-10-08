@@ -3,7 +3,12 @@
 
 LOAD_FILE="/etc/modules-load.d/v4l2loopback.conf"
 OPT_FILE="/etc/modprobe.d/linux-fake-background.conf"
+VIDEO_NR=2
 
+# If parameter supplied, use that
+if [ "$#" -ne 0 ]; then
+ VIDEO_NR="$1"
+fi
 
 # check if running as root
 if [[ $EUID -ne 0 ]]; then
@@ -23,9 +28,9 @@ fi
 if [ -f $OPT_FILE ]; then
     echo "file exists: ${OPT_FILE}, no changes have been made"
 else
-    echo 'options v4l2loopback devices=1 exclusive_caps=1 video_nr=2 card_label="fake-cam"' > $OPT_FILE
+    echo "options v4l2loopback devices=1 exclusive_caps=1 video_nr=${VIDEO_NR} card_label=\"fake-cam\"" > $OPT_FILE
     echo "created: ${OPT_FILE}"
-    echo "reloading kernal modules..."
+    echo "reloading kernel modules..."
     systemctl restart systemd-modules-load.service
     echo "..done"
 fi

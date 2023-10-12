@@ -268,9 +268,14 @@ optional arguments:
   -m FOREGROUND_MASK_IMAGE, --foreground-mask-image FOREGROUND_MASK_IMAGE
                         Foreground mask image path (default: foreground-
                         mask.png)
-  --hologram            Add a hologram effect (default: False)
-  --no-ondemand         Continue processing when there is no application using
-                        the virtual webcam (default: False)
+  --hologram            Add a hologram effect. Shortcut for --selfie=hologram
+                        (default: False)
+  --selfie SELFIE       Foreground effects. Can be passed multiple time and
+                        support the following effects: "hologram",
+                        "solid=<N,N,N>", "cmap=<name>" and "blur=<N>"
+                        (default: [])
+  --no-ondemand         Continue processing when there is no application
+                        using the virtual webcam (default: False)
   --background-mask-update-speed BACKGROUND_MASK_UPDATE_SPEED
                         The running average percentage for background mask
                         updates (default: 50)
@@ -287,13 +292,26 @@ optional arguments:
                         Fake-Background-
                         Webcam/issues/135#issuecomment-883361294 (default: 1)
   --cmap-person CMAP_PERSON
-                        Apply colour map to the person using cmapy. For
-                        examples, please refer to
-                        https://gitlab.com/cvejarano-
+                        Apply colour map to the person using cmapy. Shortcut
+                        for --selfie=cmap=<name>. For examples, please refer
+                        to https://gitlab.com/cvejarano-
                         oss/cmapy/blob/master/docs/colorize_all_examples.md
                         (default: None)
   --cmap-bg CMAP_BG     Apply colour map to background using cmapy (default:
                         None)
+
+--selfie=<filter> can be specified multiple times and accept a filter + its optional
+arguments like --selfie=FILTER[=FILTER_ARGUMENTS].
+
+Each filter is applied to the foreground (self) in the order they appear.
+The following are supported:
+- hologram: Apply an hologram effect?
+- solid=<B,G,R>: Fill-in the foreground fowith the specific color
+- cmap=<name>: Apply colour map <name> using cmapy
+- blur=<N>: Blur (0-100)
+
+Example:
+fake.py --selfie=blur=30 --selfie=hologram # slightly blur and apply the hologram effect
 
 Args that start with '--' (eg. -W) can also be set in a config file (specified
 via -c). Config file syntax allows: key=value, flag=true, stuff=[a,b,c] (for

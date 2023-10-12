@@ -353,6 +353,20 @@ def parse_args():
     parser = configargparse.ArgParser(description="Faking your webcam background under \
                             GNU/Linux. Please refer to: \
                             https://github.com/fangfufu/Linux-Fake-Background-Webcam",
+                                      epilog='''
+--selfie=<effect> can be specified multiple times and accept a effect + its optional
+arguments like --selfie=EFFECT[=EFFECT_ARGUMENTS].
+
+Each effect is applied to the foreground (self) in the order they appear.
+The following are supported:
+- hologram: Apply an hologram effect?
+- solid=<B,G,R>: Fill-in the foreground fowith the specific color
+- cmap=<name>: Apply colour map <name> using cmapy
+- blur=<N>: Blur (0-100)
+
+Example:
+%(prog)s --selfie=blur=30 --selfie=hologram # slightly blur and apply the hologram effect
+''',
                             formatter_class=configargparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument("-c", "--config", is_config_file=True,
@@ -390,9 +404,10 @@ def parse_args():
                         default="foreground-mask.png",
                         help="Foreground mask image path")
     parser.add_argument("--hologram", action="store_true",
-                        help="Add a hologram effect")
+                        help="Add a hologram effect. Shortcut for --selfie=hologram")
     parser.add_argument("--selfie", action='extend', nargs=1, default=[],
-                        help="Effects to apply to the self among hologram, solid=<N,N,N>, cmap=<name> or blur=<N>")
+                        help='Foreground effects. Can be passed multiple time and support the following effects:\n'
+                        + '"hologram", "solid=<N,N,N>", "cmap=<name>" and "blur=<N>"')
     parser.add_argument("--no-ondemand", action="store_true",
                         help="Continue processing when there is no application using the virtual webcam")
     parser.add_argument("--background-mask-update-speed", default="50", type=int,
@@ -407,7 +422,7 @@ def parse_args():
                         help="Select the model for MediaPipe. For more information, please refer to \
 https://github.com/fangfufu/Linux-Fake-Background-Webcam/issues/135#issuecomment-883361294")
     parser.add_argument("--cmap-person", default=None, type=str,
-                        help="Apply colour map to the person using cmapy. For examples, please refer to \
+                        help="Apply colour map to the person using cmapy. Shortcut for --selfie=cmap=<name>. For examples, please refer to \
 https://gitlab.com/cvejarano-oss/cmapy/blob/master/docs/colorize_all_examples.md")
     parser.add_argument("--cmap-bg", default=None, type=str,
                         help="Apply colour map to background using cmapy")

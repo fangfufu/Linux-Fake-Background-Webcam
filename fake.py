@@ -13,7 +13,7 @@ import pyfakewebcam
 import time
 import mediapipe as mp
 from cmapy import cmap
-
+from matplotlib import colormaps
 
 class RealCam:
     def __init__(self, src, frame_width, frame_height, frame_rate, codec):
@@ -86,7 +86,6 @@ class FakeCam:
     def __init__(self, args) -> None:
         self.no_background = args.no_background
         self.use_foreground = not args.no_foreground
-        self.hologram = args.hologram
         self.tiling = args.tile_background
         self.background_blur = getNextOddNumber(args.background_blur)
         self.sigma = self.background_blur / args.background_blur_sigma_frac
@@ -109,7 +108,14 @@ class FakeCam:
         self.classifier = mp.solutions.selfie_segmentation.SelfieSegmentation(
             model_selection=args.select_model)
         self.cmap_bg = args.cmap_bg
-        self.cmap_person = args.cmap_person
+
+        # backward compatibility
+        if args.hologram:
+            args.selfie.append('hologram')
+        if args.cmap_person:
+            args.selfie.append('cmap_person=' + args.cmap_person)
+        # unified filter processing
+        self.selfie_effects = process_selfie_args(args.selfie)
 
         # These do not involve reading from args
         self.old_mask = None
@@ -252,13 +258,10 @@ class FakeCam:
             cv2.applyColorMap(background_frame, cmap(self.cmap_bg),
                     dst=background_frame)
 
-        # Add hologram to the person
-        if self.hologram:
-            frame = hologram_effect(frame)
-
-        # Apply colour map to the person
-        if self.cmap_person:
-            cv2.applyColorMap(frame, cmap(self.cmap_person), dst=frame)
+        # Selfie processing
+        for [k, *v] in self.selfie_effects:
+            k = k + '_effect'
+            frame = globals()[k](frame, *v)
 
         # Replace background
         if self.use_sigmoid:
@@ -354,6 +357,20 @@ def parse_args():
     parser = configargparse.ArgParser(description="Faking your webcam background under \
                             GNU/Linux. Please refer to: \
                             https://github.com/fangfufu/Linux-Fake-Background-Webcam",
+                                      epilog='''
+--selfie=<effect> can be specified multiple times and accept a effect + its optional
+arguments like --selfie=EFFECT[=EFFECT_ARGUMENTS].
+
+Each effect is applied to the foreground (self) in the order they appear.
+The following are supported:
+- hologram: Apply an hologram effect?
+- solid=<B,G,R>: Fill-in the foreground fowith the specific color
+- cmap=<name>: Apply colour map <name> using cmapy
+- blur=<N>: Blur (0-100)
+
+Example:
+%(prog)s --selfie=blur=30 --selfie=hologram # slightly blur and apply the hologram effect
+''',
                             formatter_class=configargparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument("-c", "--config", is_config_file=True,
@@ -391,7 +408,10 @@ def parse_args():
                         default="foreground-mask.png",
                         help="Foreground mask image path")
     parser.add_argument("--hologram", action="store_true",
-                        help="Add a hologram effect")
+                        help="Add a hologram effect. Shortcut for --selfie=hologram")
+    parser.add_argument("--selfie", action='extend', nargs=1, default=[],
+                        help='Foreground effects. Can be passed multiple time and support the following effects:\n'
+                        + '"hologram", "solid=<N,N,N>", "cmap=<name>" and "blur=<N>"')
     parser.add_argument("--no-ondemand", action="store_true",
                         help="Continue processing when there is no application using the virtual webcam")
     parser.add_argument("--background-mask-update-speed", default="50", type=int,
@@ -406,7 +426,7 @@ def parse_args():
                         help="Select the model for MediaPipe. For more information, please refer to \
 https://github.com/fangfufu/Linux-Fake-Background-Webcam/issues/135#issuecomment-883361294")
     parser.add_argument("--cmap-person", default=None, type=str,
-                        help="Apply colour map to the person using cmapy. For examples, please refer to \
+                        help="Apply colour map to the person using cmapy. Shortcut for --selfie=cmap=<name>. For examples, please refer to \
 https://gitlab.com/cvejarano-oss/cmapy/blob/master/docs/colorize_all_examples.md")
     parser.add_argument("--cmap-bg", default=None, type=str,
                         help="Apply colour map to background using cmapy")
@@ -427,6 +447,7 @@ def shift_image(img, dx, dy):
     return img
 
 
+# Add hologram to the person
 def hologram_effect(img):
     # add a blue tint
     holo = cv2.applyColorMap(img, cv2.COLORMAP_WINTER)
@@ -444,6 +465,43 @@ def hologram_effect(img):
     out = cv2.addWeighted(img, 0.5, holo_blur, 0.6, 0)
     return out
 
+def blur_effect(frame, value=90):
+    f = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    cv2.blur(f, (value, value), dst=f)
+    return cv2.cvtColor(f, cv2.COLOR_GRAY2BGR)
+
+def solid_effect(frame, color, rule=True):
+    frame[rule] = color
+    return frame
+
+# Apply colour map to the person
+def cmap_effect(frame, map_name):
+    cv2.applyColorMap(frame, cmap(map_name), dst=frame)
+    return frame
+
+def process_selfie_args(filter_args):
+    filters = []
+    for arg in filter_args:
+        name, *value = arg.split('=', 1)
+        if name not in ['hologram', 'blur', 'solid', 'cmap']:
+            print(f"skipped unknown selfie filter: {name}", file=sys.stderr)
+            continue
+        if name in [n for [n, *v] in filters]:
+            print(f"skipped duplicated selfie filter: {name}", file=sys.stderr)
+            continue
+        if name == 'hologram': # no arg
+            filters.append([name])
+        elif name == 'cmap' and len(value) > 0:
+            if value[0] not in colormaps:
+                print(f"skipped selfie filter: Unknown cmap color: {value[0]}", file=sys.stderr)
+                continue
+            filters.append([name, value[0]])
+        elif name == 'blur' and len(value) > 0 and value[0].isnumeric():
+            filters.append([name, min(100, max(0, int(value[0])))])
+        elif name == 'solid' and len(value) > 0: # one transformed arg
+            rgb = [int(e) if e.isnumeric() else 0 for e in value[0].split(',', 3)[:3]]
+            filters.append([name, rgb])
+    return filters
 
 def sigint_handler(cam, signal, frame):
     cam.toggle_pause()

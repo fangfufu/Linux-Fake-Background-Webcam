@@ -12,13 +12,9 @@ After=network.target
 
 [Service]
 Type=simple
-# specify working directory such as Git project directory
-# %h expands to the $HOME directory of the user running the service
-WorkingDirectory=%h/devel/fangfufu/Linux-Fake-Background-Webcam
-# you can use command line options here, or point the script
-# to your config file
-ExecStart=python3 fake.py -c %h/.config/fakecam/config.ini
-# fake.py exits when pressing Ctrl + \ which corresponds to SIGQUIT
+# Use start wrapper
+ExecStart=%h/.local/bin/lfbw_start_wrapper.sh
+# LFBW exits when pressing Ctrl + \ which corresponds to SIGQUIT
 # so we need to specify this kill signal instead of SIGINT
 KillSignal=SIGQUIT
 

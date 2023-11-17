@@ -8,7 +8,13 @@ VIDEO_NR=2
 # If parameter supplied, use that
 if [ "$#" -ne 0 ]; then
  VIDEO_NR="$1"
+else
+    # Otherwise, try to infer new video device number automatically
+    LASTDEV=$(v4l2-ctl --list-devices | grep -Po "(?<=/dev/video).*$" | sort | tail -n 1 | tr -d '\n')
+    VIDEO_NR=$(echo "$LASTDEV+1" | bc)
 fi
+
+echo "Creating fake video device with nr. $VIDEO_NR"
 
 # check if running as root
 if [[ $EUID -ne 0 ]]; then

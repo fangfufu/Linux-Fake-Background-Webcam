@@ -56,7 +56,8 @@ To create the virtual video device on startup, run the `v4l2loopback-install.sh`
 script to create `/etc/modules-load.d/v4l2loopback.conf` to load the module and
 `/etc/modprobe.d/linux-fake-background.conf` to configure the module.
 
-You can provide the video device number you want to use as an argument to this installation script. For example, if you run `v4l2-ctl --list-devices` and get something like this:
+You can provide the video device number you want to use as an argument to this installation script.
+For example, if you run `v4l2-ctl --list-devices` and get something like this:
 
 ```text
 Integrated Camera: Integrated C (usb-0000:00:14.0-4):
@@ -73,6 +74,9 @@ You would want to run the command as follows to use the next available device nu
 ```shell
 ./v4l2loopback-install.sh 4
 ```
+
+If you don't provide a video device number, the script will try to infer the next available device number for you.
+This functionality requires `grep` with PCRE support and `bc`.
 
 The camera will appear as `fake-cam` in your video source list.
 

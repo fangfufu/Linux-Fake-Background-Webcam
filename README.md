@@ -159,56 +159,28 @@ Both v4l2loopback and Akvcam require custom kernel module. This might not be
 possible if you have secure boot enabled. Please refer to your device
 manufacturer's manual on disabling secure boot.
 
-### Python 3
-You will need Python 3. You need to have pip installed. Please make sure that
-you have installed the correct version pip, if you have both Python 2 and
-Python 3 installed. Please make sure that the command ``pip3`` runs.
-
-In Debian, you can run
-
-    sudo apt-get install python3-pip
-
-I am assuming that you have set up your user environment properly, and when you
-install Python packages, they will be installed locally within your home
-directory.
-
-You might want to add the following line in your ``${HOME}/.profile``. This line
-is needed for Debian Buster.
-
-    export PATH="$HOME/.local/bin":$PATH
-
-
-### Upgrading pip
-Mediapipe requires pip version 19.3 or above. (Please refer to
-[here](https://pypi.org/project/mediapipe/#files) and
-[here](https://github.com/pypa/manylinux)). However, the pip distributed with
-some Linux distributions is outdated, e.g.
-[Debian Buster](https://packages.debian.org/buster/python3-pip).
-
-If you are on Debian Buster please make sure ``.local/bin`` is in your ``PATH``.
-You can make sure this is the case by adding:
-
-    PATH="$HOME/.local/bin":$PATH
-
-in your ``~/.profile``.
-
-You can then upgrade pip by running:
-
-    pip3 install --upgrade pip
-
 ## Installation
 
-You may install python dependencies to your system with:
+Set up a virtual environment running Python >= 3.8 and <=3.11. You can use conda, pyenv, virtual-env or whatever you like.
 
-```shell
-./install.sh
+Activate this virtual environment.
+
+Mediapipe requires pip version 19.3 or above. (Please refer to [here](https://pypi.org/project/mediapipe/#files) and [here](https://github.com/pypa/manylinux)).
+Upgrade pip by running:
+
+```
+python -m pip install --upgrade pip
 ```
 
-but it is probably better than you only install them to a local virtual environment with [poetry](https://python-poetry.org/docs/):
+Then clone the repository and install the software:
 
-```shell
-poetry install
 ```
+git clone https://github.com/fangfufu/Linux-Fake-Background-Webcam
+cd Linux-Fake-Background-Webcam
+python -m pip install --upgrade .
+```
+
+If pip complains about being unable to resolve `mediapipe`, it means you are running an unsupported Python version (<3.8 or >3.11). Mediapipe currently supports only Python 3.8-3.11.
 
 ### Installing with Docker
 The use of Docker is no longer supported. I no longer see any reason for using
@@ -222,23 +194,17 @@ for when Bodypix was needed. The ability to change background and foreground
 images on-the-fly is unsupported when running under Docker.
 
 ## Usage
-In the terminal window, do the following (if using v4l2loopback) :
 
+Inside the virtual environment in which you installed the software, simply run
 ```shell
-python3 fake.py
-```
-
-of, if you installed the poetry environment, with:
-
-```shell
-poetry run fake.py
+lfbw
 ```
 
 You configure it using a ini file, see `./config-example.ini`.
 To run with a config file, use the following command:
 
 ```shell
-poetry run fake.py -c ./config-example.ini
+lfbw -c ./config-example.ini
 ```
 
 The files that you might want to replace are the followings:
@@ -259,10 +225,12 @@ on-demand processing behaviour by specifying the ``--no-ondemand`` flag.
 Note that animated background is supported. You can use any video file that can
 be read by OpenCV.
 
-### fake.py
-``fakecam.py`` supports the following options:
+### lfbw
+
+`lfbw` supports the following options:
+
 ```
-usage: fake.py [-h] [-c CONFIG] [-W WIDTH] [-H HEIGHT] [-F FPS] [-C CODEC]
+usage: lfbw    [-h] [-c CONFIG] [-W WIDTH] [-H HEIGHT] [-F FPS] [-C CODEC]
                [-w WEBCAM_PATH] [-v V4L2LOOPBACK_PATH] [--no-background]
                [-b BACKGROUND_IMAGE] [--tile-background] [--background-blur k]
                [--background-blur-sigma-frac frac] [--background-keep-aspect]
@@ -364,18 +332,32 @@ override defaults.
 ```
 
 ### Per-user systemd service
+
+Modify `./systemd-user/lfbw_start_wrapper.sh` to suit your needs.
+In particular, point to the correct `activate` shim for your virtual environment, and to the correct path to your config file.
+Copy the file inside `$HOME/.local/bin` folder.
+```
+cp ./systemd-user/lfbw_start_wrapper.sh $HOME/.local/bin/
+```
+
 Copy the systemd service file from `systemd-user` folder to a location
 suitable for user-defined systemd services (typically
 `$HOME/.config/systemd/user`).
 
-Modify the `WorkingDirectory` directive to point to the location of the
-installation, and `ExecStart` directive to configure how `fake.py` is run.
+```
+cp ./systemd-user/lfbw.service $HOME/.config/systemd/user/
+```
 
 To start the service and enable it so that it is run after login, run the
 following (as normal user):
 ```
-$ systemctl --user start fakecam.service
-$ systemctl --user enable fakecam.service
+$ systemctl --user start lfbw
+$ systemctl --user enable lfbw
+```
+
+Check that the process is running smoothly:
+```
+$ systemctl --user status lfbw
 ```
 
 ## License

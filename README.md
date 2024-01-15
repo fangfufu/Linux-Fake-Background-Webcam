@@ -364,7 +364,7 @@ $ systemctl --user status lfbw
 The source code of this repository are released under GPLv3.
 
     Linux Fake Background Webcam
-    Copyright (C) 2020-2021  Fufu Fang
+    Copyright (C) 2020-2024  Fufu Fang
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by

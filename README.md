@@ -1,3 +1,6 @@
+[![CodeFactor](https://www.codefactor.io/repository/github/fangfufu/linux-fake-background-webcam/badge)](https://www.codefactor.io/repository/github/fangfufu/linux-fake-background-webcam)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/9ab112be62e4472aa114181bcde1a885)](https://app.codacy.com/gh/fangfufu/Linux-Fake-Background-Webcam/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
+
 # Linux-Fake-Background-Webcam
 
 ## Background

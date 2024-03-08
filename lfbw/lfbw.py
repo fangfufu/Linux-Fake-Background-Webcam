@@ -14,6 +14,7 @@ import time
 import mediapipe as mp
 from cmapy import cmap
 from matplotlib import colormaps
+import copy
 
 class RealCam:
     def __init__(self, src, frame_width, frame_height, frame_rate, codec):
@@ -229,7 +230,7 @@ class FakeCam:
                 self.images["foreground_mask"]
 
     def compose_frame(self, frame):
-        mask = self.classifier.process(frame).segmentation_mask
+        mask = copy.copy(self.classifier.process(frame).segmentation_mask)
 
         if self.threshold < 1:
             cv2.threshold(mask, self.threshold, 1, cv2.THRESH_BINARY, dst=mask)

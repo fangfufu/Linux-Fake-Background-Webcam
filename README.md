@@ -140,7 +140,7 @@ colour format of Akvcam.
 4. Run ``sudo modprobe akvcam`` or make the akvcam start with a system:
 ``sudo akvcam-install.sh``
 5. Akvcam should have created two extra ``video`` devices.
-6. When running ``fake.py``, you need to set ``-v`` to the first video device
+6. When running ``lfbw.py``, you need to set ``-v`` to the first video device
 that Akvcam created, e.g. if Akvcam created ``/dev/video5`` and ``/dev/video6``,
 you need to set ``-v /dev/video5``.
 7. The software that uses the virtual webcam should the second device that
@@ -148,7 +148,7 @@ Akvcam created, e.g. if Akvcam created ``/dev/video5`` and ``/dev/video6``,
 you need to set the software to use ``/dev/video6``.
 
 Note that in ``akvcam/config.ini``, ``Akvcam (Output device)`` is the  device
-that ``fake.py`` outputs to, and ``Akvcam (Capture device)`` is the "capture
+that ``lfbw.py`` outputs to, and ``Akvcam (Capture device)`` is the "capture
 device", which is opened by the software that you want to use the virtual webcam
 with.
 
@@ -325,7 +325,7 @@ The following are supported:
 - blur=<N>: Blur (0-100)
 
 Example:
-fake.py --selfie=blur=30 --selfie=hologram # slightly blur and apply the hologram effect
+lfbw.py --selfie=blur=30 --selfie=hologram # slightly blur and apply the hologram effect
 
 Args that start with '--' (eg. -W) can also be set in a config file (specified
 via -c). Config file syntax allows: key=value, flag=true, stuff=[a,b,c] (for

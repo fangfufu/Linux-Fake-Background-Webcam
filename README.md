@@ -363,6 +363,9 @@ Check that the process is running smoothly:
 $ systemctl --user status lfbw
 ```
 
+[![Contributors Avatars](https://contributors-img.web.app/image?repo=fangfufu/Linux-Fake-Background-Webcam)](https://github.com/fangfufu/Linux-Fake-Background-Webcam/graphs/contributors)
+[![Contributors Count](https://img.shields.io/github/contributors-anon/fangfufu/Linux-Fake-Background-Webcam?style=for-the-badge&logo=Linux-Fake-Background-Webcam)](https://github.com/fangfufu/Linux-Fake-Background-Webcam/graphs/contributors)
+
 ## License
 The source code of this repository are released under GPLv3.
 

@@ -256,8 +256,7 @@ class FakeCam:
 
         # Apply colour map to the background
         if self.cmap_bg:
-            cv2.applyColorMap(background_frame, cmap(self.cmap_bg),
-                    dst=background_frame)
+            background_frame = cv2.applyColorMap(background_frame, cmap(self.cmap_bg))
 
         # Selfie processing
         for [k, *v] in self.selfie_effects:

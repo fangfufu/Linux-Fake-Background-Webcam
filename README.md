@@ -363,6 +363,10 @@ Check that the process is running smoothly:
 $ systemctl --user status lfbw
 ```
 
+## Contributors
+
+Thanks for your contribution to the project!
+
 [![Contributors Avatars](https://contributors-img.web.app/image?repo=fangfufu/Linux-Fake-Background-Webcam)](https://github.com/fangfufu/Linux-Fake-Background-Webcam/graphs/contributors)
 [![Contributors Count](https://img.shields.io/github/contributors-anon/fangfufu/Linux-Fake-Background-Webcam?style=for-the-badge&logo=Linux-Fake-Background-Webcam)](https://github.com/fangfufu/Linux-Fake-Background-Webcam/graphs/contributors)
 

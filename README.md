@@ -164,7 +164,7 @@ manufacturer's manual on disabling secure boot.
 
 ## Installation
 
-Set up a virtual environment running Python >= 3.8 and <=3.11. You can use conda, pyenv, virtual-env or whatever you like.
+Set up a virtual environment running Python >= 3.9 and <=3.11. You can use conda, pyenv, virtual-env or whatever you like.
 
 Activate this virtual environment.
 

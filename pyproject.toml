@@ -6,7 +6,7 @@ build-backend = "poetry.core.masonry.api"
 name = "linux-fake-background-webcam"
 version = "0.1.0"
 description = "Faking your webcam background under GNU/Linux."
-authors = ["Martin Shetty <1972005+martukas@users.noreply.github.com>"]
+authors = ["Fufu Fang <fangfufu2003@gmail.com>"]
 packages = [
     { include = "lfbw" }
 ]
@@ -22,6 +22,6 @@ pyfakewebcam = ">=0.1.0"
 mediapipe = ">=0.8.7.1"
 inotify_simple = ">=1.2"
 cmapy = ">=0.6.6"
-configargparse = ">=1.5.0,<1.6.dev0"
+configargparse = ">=1.5.0"
 protobuf = "3.20.2"
 

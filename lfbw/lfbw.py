@@ -3,6 +3,7 @@
 from inotify_simple import INotify, flags
 import itertools
 import signal
+import os
 import sys
 import configargparse
 from functools import partial
@@ -11,7 +12,6 @@ import cv2
 import numpy as np
 import pyfakewebcam
 import time
-import mediapipe as mp
 from cmapy import cmap
 from matplotlib import colormaps
 import copy
@@ -85,38 +85,23 @@ class RealCam:
 
 class FakeCam:
     def __init__(self, args) -> None:
-        self.no_background = args.no_background
-        self.use_foreground = not args.no_foreground
-        self.tiling = args.tile_background
-        self.background_blur = getNextOddNumber(args.background_blur)
-        self.sigma = self.background_blur / args.background_blur_sigma_frac
-        self.background_keep_aspect = args.background_keep_aspect
-        self.background_image = args.background_image
-        self.foreground_image = args.foreground_image
-        self.foreground_mask_image = args.foreground_mask_image
         self.webcam_path = args.webcam_path
         self.width = args.width
         self.height = args.height
         self.fps = args.fps
         self.codec = args.codec
-        self.MRAR = getPercentageFloat(
-            args.background_mask_update_speed)  # Mask Running Average Ratio
         self.use_sigmoid = args.use_sigmoid
         self.threshold = getPercentageFloat(args.threshold)
         self.postprocess = args.no_postprocess
         self.ondemand = not args.no_ondemand
         self.v4l2loopback_path = args.v4l2loopback_path
-        self.classifier = mp.solutions.selfie_segmentation.SelfieSegmentation(
-            model_selection=args.select_model)
-        self.cmap_bg = args.cmap_bg
 
-        # backward compatibility
-        if args.hologram:
-            args.selfie.append('hologram')
-        if args.cmap_person:
-            args.selfie.append('cmap_person=' + args.cmap_person)
-        # unified filter processing
-        self.selfie_effects = process_selfie_args(args.selfie)
+        # Process unified filter arguments with structured defaults
+        self.filters = {
+            'selfie': create_filter_config(process_filter_args(args.selfie), 'selfie'),
+            'background': create_filter_config(process_filter_args(args.background), 'background'),
+            'mask': create_filter_config(process_filter_args(args.mask), 'mask')
+        }
 
         # These do not involve reading from args
         self.old_mask = None
@@ -135,6 +120,17 @@ class FakeCam:
         self.images: Dict[str, Any] = {}
         self.paused = False
         self.consumers = 0
+
+        if args.dump:
+            print("internal state for debugging:")
+            print(self.__dict__)
+            sys.exit(0)
+
+        # slow model loading
+        import mediapipe as mp
+        self.classifier = mp.solutions.selfie_segmentation.SelfieSegmentation(
+            model_selection=args.select_model)
+
 
     def resize_image(self, img, keep_aspect):
         """ Rescale image to dimensions self.width, self.height.
@@ -161,73 +157,111 @@ class FakeCam:
     def load_images(self):
         self.images: Dict[str, Any] = {}
 
-        background = cv2.imread(self.background_image)
-        if background is not None:
-            if not self.tiling:
-                background = self.resize_image(background,
-                                               self.background_keep_aspect)
-            else:
-                sizey, sizex = background.shape[0], background.shape[1]
-                if sizex > self.width and sizey > self.height:
-                    background = cv2.resize(
-                        background, (self.width, self.height))
+        # Process background filters
+        bg_config = self.filters['background']
+        background = None
+
+        # Check for 'no' background
+        if bg_config['disabled']:
+            pass
+        elif bg_config['file']:
+            bg_path = bg_config['file']
+            background = cv2.imread(bg_path)
+            if background is not None:
+                # Static image
+                if not bg_config['tile']:
+                    background = self.resize_image(background, bg_config['crop'])
                 else:
-                    repx = (self.width - 1) // sizex + 1
-                    repy = (self.height - 1) // sizey + 1
-                    background = np.tile(background, (repy, repx, 1))
-                    background = background[0:self.height, 0:self.width]
-            background = itertools.repeat(background)
-        else:
-            background_video = cv2.VideoCapture(self.background_image)
-            if not background_video.isOpened():
-                raise RuntimeError("Couldn't open video '{}'".format(
-                    self.background_image))
-            self.bg_video_fps = background_video.get(cv2.CAP_PROP_FPS)
-            # Initiate current fps to background video fps
-            self.current_fps = self.bg_video_fps
-
-            def read_frame():
-                ret, frame = background_video.read()
-                if not ret:
-                    background_video.set(cv2.CAP_PROP_POS_FRAMES, 0)
-                    ret, frame = background_video.read()
-                    assert ret, 'cannot read frame %r' % self.background_image
-                return self.resize_image(frame, self.background_keep_aspect)
-
-            def next_frame():
-                while True:
-                    # Number of frames we need to advance background movie,
-                    # fractional.
-                    advrate = self.bg_video_fps / self.current_fps
-                    if advrate < 1:
-                        # Number of frames<1 so to avoid movie freezing randomly
-                        # choose whether to advance by one frame with correct
-                        # probability.
-                        self.bg_video_adv_rate = 1 if np.random.uniform() < advrate else 0
+                    sizey, sizex = background.shape[0], background.shape[1]
+                    if sizex > self.width and sizey > self.height:
+                        background = cv2.resize(background, (self.width, self.height))
                     else:
-                        # Just round to nearest number of frames when >=1.
-                        self.bg_video_adv_rate = round(advrate)
-                    for i in range(self.bg_video_adv_rate):
-                        frame = read_frame()
-                    yield frame
-            background = next_frame()
+                        repx = (self.width - 1) // sizex + 1
+                        repy = (self.height - 1) // sizey + 1
+                        background = np.tile(background, (repy, repx, 1))
+                        background = background[0:self.height, 0:self.width]
+                background = itertools.repeat(background)
+            else:
+                # Try as video
+                background_video = cv2.VideoCapture(bg_path)
+                if not background_video.isOpened():
+                    raise RuntimeError("Couldn't open file '{}'".format(bg_path))
+                self.bg_video_fps = background_video.get(cv2.CAP_PROP_FPS)
+                self.current_fps = self.bg_video_fps
+
+                def read_frame():
+                    ret, frame = background_video.read()
+                    if not ret:
+                        background_video.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                        ret, frame = background_video.read()
+                        assert ret, 'cannot read frame %r' % bg_path
+                    return self.resize_image(frame, bg_config['crop'])
+
+                def next_frame():
+                    while True:
+                        advrate = self.bg_video_fps / self.current_fps
+                        if advrate < 1:
+                            # Use deterministic value if TEST_DETERMINISTIC env var is set
+                            if os.environ.get('TEST_DETERMINISTIC'):
+                                self.bg_video_adv_rate = 1 if 0.5 < advrate else 0  # Fixed threshold
+                            else:
+                                self.bg_video_adv_rate = 1 if np.random.uniform() < advrate else 0
+                        else:
+                            self.bg_video_adv_rate = round(advrate)
+                        for i in range(self.bg_video_adv_rate):
+                            frame = read_frame()
+                        yield frame
+                background = next_frame()
 
         self.images["background"] = background
 
-        if self.use_foreground and self.foreground_image is not None:
-            foreground = cv2.imread(self.foreground_image)
-            self.images["foreground"] = cv2.resize(foreground,
-                                                   (self.width, self.height))
-            foreground_mask = cv2.imread(self.foreground_mask_image)
-            foreground_mask = cv2.normalize(
-                foreground_mask, None, alpha=0, beta=1,
-                norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
-            foreground_mask = cv2.resize(foreground_mask,
-                                         (self.width, self.height))
-            self.images["foreground_mask"] = cv2.cvtColor(
-                foreground_mask, cv2.COLOR_BGR2GRAY)
-            self.images["inverted_foreground_mask"] = 1 - \
-                self.images["foreground_mask"]
+        # Process mask filters
+        mask_config = self.filters['mask']
+
+        # Check for 'no' mask (disabled)
+        if not mask_config['disabled']:
+            if mask_config['file']:
+                # Check if it's a mask file or foreground image file
+                mask_path = mask_config['file']
+
+                # Try to determine if this is a mask or a foreground image
+                # Masks typically have transparency or are grayscale
+                test_img = cv2.imread(mask_path, cv2.IMREAD_UNCHANGED)
+                if test_img is not None:
+                    # Check if it's likely a mask (grayscale or has alpha channel)
+                    is_mask = len(test_img.shape) == 2 or (len(test_img.shape) == 3 and test_img.shape[2] == 4)
+
+                    if is_mask or mask_config.get('mask_file'):
+                        # It's a mask file
+                        foreground_mask = cv2.imread(mask_path)
+                        if foreground_mask is not None:
+                            foreground_mask = cv2.normalize(
+                                foreground_mask, None, alpha=0, beta=1,
+                                norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+                            foreground_mask = cv2.resize(foreground_mask,
+                                                         (self.width, self.height))
+                            self.images["foreground_mask"] = cv2.cvtColor(
+                                foreground_mask, cv2.COLOR_BGR2GRAY)
+                            self.images["inverted_foreground_mask"] = 1 - \
+                                self.images["foreground_mask"]
+                    else:
+                        # It's a foreground image - create a default mask
+                        foreground = cv2.imread(mask_path)
+                        if foreground is not None:
+                            self.images["foreground"] = cv2.resize(foreground,
+                                                                   (self.width, self.height))
+                            # Create a default mask (full opacity)
+                            self.images["foreground_mask"] = np.ones((self.height, self.width),
+                                                                     dtype=np.float32)
+                            self.images["inverted_foreground_mask"] = np.zeros((self.height, self.width),
+                                                                               dtype=np.float32)
+
+            # Check for separate foreground image
+            if mask_config.get('foreground_file'):
+                foreground = cv2.imread(mask_config['foreground_file'])
+                if foreground is not None:
+                    self.images["foreground"] = cv2.resize(foreground,
+                                                           (self.width, self.height))
 
     def compose_frame(self, frame):
         mask = copy.copy(self.classifier.process(frame).segmentation_mask)
@@ -239,41 +273,68 @@ class FakeCam:
             cv2.dilate(mask, np.ones((5, 5), np.uint8), iterations=1, dst=mask)
             cv2.blur(mask, (10, 10), dst=mask)
 
-        if self.MRAR < 1:
-            if self.old_mask is None:
-                self.old_mask = mask
-            mask = cv2.accumulateWeighted(mask, self.old_mask, self.MRAR)
+        # Handle mask update speed
+        bg_config = self.filters['background']
+        if bg_config['mask_update_speed'] is not None:
+            MRAR = getPercentageFloat(bg_config['mask_update_speed'])
+            if MRAR < 1:
+                if self.old_mask is None:
+                    self.old_mask = mask
+                mask = cv2.accumulateWeighted(mask, self.old_mask, MRAR)
 
-        # Get background image
-        if self.no_background is False:
-            background_frame = next(self.images["background"])
-        else:
+        # Get background frame
+        background_frame = None
+        if self.images["background"] is None:
+            # Default blur background
+            blur_val = bg_config['blur'] if bg_config['blur'] is not None else 21
+            blur_val = getNextOddNumber(blur_val)
+            sigma = blur_val / 3
             background_frame = cv2.GaussianBlur(frame,
-                                                (self.background_blur,
-                                                 self.background_blur),
-                                                self.sigma,
+                                                (blur_val, blur_val),
+                                                sigma,
                                                 borderType=cv2.BORDER_DEFAULT)
+        else:
+            background_frame = next(self.images["background"])
 
-        # Apply colour map to the background
-        if self.cmap_bg:
-            background_frame = cv2.applyColorMap(background_frame, cmap(self.cmap_bg))
+        # Apply background effects
+        background_frame = apply_effects_from_config(background_frame, bg_config)
 
-        # Selfie processing
-        for [k, *v] in self.selfie_effects:
-            k = k + '_effect'
-            frame = globals()[k](frame, *v)
+        # Apply selfie effects
+        frame = apply_effects_from_config(frame, self.filters['selfie'])
 
         # Replace background
         if self.use_sigmoid:
             mask = sigmoid(mask)
 
+        # Handle opacity for selfie
+        selfie_config = self.filters['selfie']
+        if selfie_config['opacity'] is not None:
+            opacity = min(100, max(0, int(selfie_config['opacity']))) / 100.0
+            # Adjust the mask values by opacity (lower opacity = more background shows through)
+            mask = mask * opacity
+
         cv2.blendLinear(frame, background_frame, mask, 1 - mask, dst=frame)
 
-        # Add foreground if needed
-        if self.use_foreground and self.foreground_image is not None:
-            cv2.blendLinear(frame, self.images["foreground"],
-                    self.images["inverted_foreground_mask"],
-                    self.images["foreground_mask"], dst=frame)
+        # Add foreground mask if available
+        if "foreground_mask" in self.images and "foreground" in self.images:
+            # Apply mask effects to the foreground image
+            foreground = self.images["foreground"].copy()
+            foreground = apply_effects_from_config(foreground, self.filters['mask'])
+
+            # Handle opacity for mask overlay
+            mask_config = self.filters['mask']
+            if mask_config['opacity'] is not None:
+                opacity = min(100, max(0, int(mask_config['opacity']))) / 100.0
+                # Adjust the mask values by opacity
+                adjusted_mask = self.images["foreground_mask"] * opacity
+                adjusted_inv_mask = 1 - adjusted_mask
+                cv2.blendLinear(frame, foreground,
+                        adjusted_inv_mask,
+                        adjusted_mask, dst=frame)
+            else:
+                cv2.blendLinear(frame, foreground,
+                        self.images["inverted_foreground_mask"],
+                        self.images["foreground_mask"], dst=frame)
 
         return frame
 
@@ -353,25 +414,36 @@ class FakeCam:
             self.load_images()
 
 
-def parse_args():
-    parser = configargparse.ArgParser(description="Faking your webcam background under \
-                            GNU/Linux. Please refer to: \
-                            https://github.com/fangfufu/Linux-Fake-Background-Webcam",
-                                      epilog='''
---selfie=<effect> can be specified multiple times and accept a effect + its optional
-arguments like --selfie=EFFECT[=EFFECT_ARGUMENTS].
+def parser():
+    parser = configargparse.ArgParser(
+        description="Faking your webcam background under GNU/Linux. "
+                    "Please refer to: https://github.com/fangfufu/Linux-Fake-Background-Webcam",
+        epilog='''
+Unified filter options for selfie, background, and mask:
 
-Each effect is applied to the foreground (self) in the order they appear.
-The following are supported:
-- hologram: Apply an hologram effect?
-- solid=<B,G,R>: Fill-in the foreground fowith the specific color
-- cmap=<name>: Apply colour map <name> using cmapy
-- blur=<N>: Blur (0-100)
+Each component accepts a comma-separated list of effects:
+- file=<filename>: Use specified image/video file
+- hologram: Apply hologram effect
+- blur=<N>: Apply blur with intensity 0-100
+- solid=<B,G,R>: Fill with specific BGR color
+- cmap=<name>: Apply color map using cmapy
+- brightness=<N>: Adjust brightness 0-200 (100=normal)
+- no: Disable component (background and mask)
+- tile: Tile the image (background only)
+- crop: Maintain aspect ratio by cropping (background only)
+- mask-update-speed=<N>: Control mask update speed (background only)
+- foreground=<filename>: Specify foreground image to overlay (mask only)
+- mask-file=<filename>: Explicitly specify mask file when using foreground (mask only)
+- opacity=<N>: Set opacity 0-100 (selfie: person transparency, mask: overlay transparency)
 
-Example:
-%(prog)s --selfie=blur=30 --selfie=hologram # slightly blur and apply the hologram effect
+Examples:
+%(prog)s --selfie=blur=30,hologram
+%(prog)s --background=file=mybg.jpg,cmap=viridis
+%(prog)s --background=no,blur=50
+%(prog)s --mask=file=mask.png,blur=20
+%(prog)s --mask=foreground=logo.png,mask-file=logo-mask.png,opacity=80
 ''',
-                            formatter_class=configargparse.ArgumentDefaultsHelpFormatter)
+        formatter_class=configargparse.RawTextHelpFormatter)
 
     parser.add_argument("-c", "--config", is_config_file=True,
                         help="Config file")
@@ -387,35 +459,14 @@ Example:
                         help="Set real webcam path")
     parser.add_argument("-v", "--v4l2loopback-path", default="/dev/video2",
                         help="V4l2loopback device path")
-    parser.add_argument("--no-background", action="store_true",
-                        help="Disable background image and blur the real background")
-    parser.add_argument("-b", "--background-image", default="background.jpg",
-                        help="Background image path, animated background is \
-                        supported.")
-    parser.add_argument("--tile-background", action="store_true",
-                        help="Tile the background image")
-    parser.add_argument("--background-blur", default="21", type=int, metavar='k',
-                        help="The gaussian bluring kernel size in pixels")
-    parser.add_argument("--background-blur-sigma-frac", default="3", type=int, metavar='frac',
-                        help="The fraction of the kernel size to use for the sigma value (ie. sigma = k / frac)")
-    parser.add_argument("--background-keep-aspect", action="store_true",
-                        help="Crop background if needed to maintain aspect ratio")
-    parser.add_argument("--no-foreground", action="store_true",
-                        help="Disable foreground image")
-    parser.add_argument("-f", "--foreground-image", default="foreground.jpg",
-                        help="Foreground image path")
-    parser.add_argument("-m", "--foreground-mask-image",
-                        default="foreground-mask.png",
-                        help="Foreground mask image path")
-    parser.add_argument("--hologram", action="store_true",
-                        help="Add a hologram effect. Shortcut for --selfie=hologram")
-    parser.add_argument("--selfie", action='extend', nargs=1, default=[],
-                        help='Foreground effects. Can be passed multiple time and support the following effects:\n'
-                        + '"hologram", "solid=<N,N,N>", "cmap=<name>" and "blur=<N>"')
+    parser.add_argument("--selfie", default="", type=str,
+                        help="Selfie effects (comma-separated)")
+    parser.add_argument("--background", default="file=background.jpg", type=str,
+                        help="Background effects (comma-separated)")
+    parser.add_argument("--mask", default="", type=str,
+                        help="Mask effects (comma-separated)")
     parser.add_argument("--no-ondemand", action="store_true",
                         help="Continue processing when there is no application using the virtual webcam")
-    parser.add_argument("--background-mask-update-speed", default="50", type=int,
-                        help="The running average percentage for background mask updates")
     parser.add_argument("--use-sigmoid", action="store_true",
                         help="Force the mask to follow a sigmoid distribution")
     parser.add_argument("--threshold", default="75", type=int,
@@ -423,14 +474,11 @@ Example:
     parser.add_argument("--no-postprocess", action="store_false",
                         help="Disable postprocessing (masking dilation and blurring)")
     parser.add_argument("--select-model", default="1", type=int,
-                        help="Select the model for MediaPipe. For more information, please refer to \
-https://github.com/fangfufu/Linux-Fake-Background-Webcam/issues/135#issuecomment-883361294")
-    parser.add_argument("--cmap-person", default=None, type=str,
-                        help="Apply colour map to the person using cmapy. Shortcut for --selfie=cmap=<name>. For examples, please refer to \
-https://gitlab.com/cvejarano-oss/cmapy/blob/master/docs/colorize_all_examples.md")
-    parser.add_argument("--cmap-bg", default=None, type=str,
-                        help="Apply colour map to background using cmapy")
-    return parser.parse_args()
+                        help="Select the model for MediaPipe. For more information, please refer to "
+                        "https://github.com/fangfufu/Linux-Fake-Background-Webcam/issues/135#issuecomment-883361294")
+    parser.add_argument("--dump", action="store_true",
+                        help="Dump the filter configuration and exit")
+    return parser
 
 
 def shift_image(img, dx, dy):
@@ -447,7 +495,7 @@ def shift_image(img, dx, dy):
     return img
 
 
-# Add hologram to the person
+# Effect functions
 def hologram_effect(img):
     # add a blue tint
     holo = cv2.applyColorMap(img, cv2.COLORMAP_WINTER)
@@ -455,7 +503,11 @@ def hologram_effect(img):
     bandLength, bandGap = 3, 4
     for y in range(holo.shape[0]):
         if y % (bandLength + bandGap) < bandLength:
-            holo[y, :, :] = holo[y, :, :] * np.random.uniform(0.1, 0.3)
+            # Use deterministic value if TEST_DETERMINISTIC env var is set
+            if os.environ.get('TEST_DETERMINISTIC'):
+                holo[y, :, :] = holo[y, :, :] * 0.2  # Fixed value instead of random
+            else:
+                holo[y, :, :] = holo[y, :, :] * np.random.uniform(0.1, 0.3)
     # add some ghosting
     holo_blur = cv2.addWeighted(holo, 0.2, shift_image(
         holo.copy(), 5, 5), 0.8, 0)
@@ -466,42 +518,281 @@ def hologram_effect(img):
     return out
 
 def blur_effect(frame, value=90):
-    f = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    cv2.blur(f, (value, value), dst=f)
-    return cv2.cvtColor(f, cv2.COLOR_GRAY2BGR)
+    value = min(100, max(0, int(value)))
+    if value == 0:
+        return frame
+    # Convert blur percentage to kernel size
+    kernel_size = int((value / 100) * 99) + 1
+    kernel_size = getNextOddNumber(kernel_size)
+    return cv2.GaussianBlur(frame, (kernel_size, kernel_size), 0)
 
-def solid_effect(frame, color, rule=True):
-    frame[rule] = color
+def solid_effect(frame, color):
+    frame[:] = color
     return frame
 
-# Apply colour map to the person
 def cmap_effect(frame, map_name):
     cv2.applyColorMap(frame, cmap(map_name), dst=frame)
     return frame
 
-def process_selfie_args(filter_args):
+def brightness_effect(frame, value=100):
+    """Apply brightness effect by adjusting intensity."""
+    brightness = min(200, max(0, int(value))) / 100.0  # Allow up to 200% brightness
+    return np.clip(frame * brightness, 0, 255).astype(np.uint8)
+
+
+def process_filter_args(filter_string):
+    """Process comma-separated filter arguments into a list of [name, *args] lists."""
+    if not filter_string:
+        return []
+
     filters = []
-    for arg in filter_args:
-        name, *value = arg.split('=', 1)
-        if name not in ['hologram', 'blur', 'solid', 'cmap']:
-            print(f"skipped unknown selfie filter: {name}", file=sys.stderr)
-            continue
-        if name in [n for [n, *v] in filters]:
-            print(f"skipped duplicated selfie filter: {name}", file=sys.stderr)
-            continue
-        if name == 'hologram': # no arg
+    i = 0
+
+    while i < len(filter_string):
+        # Find the next equals sign
+        eq_pos = filter_string.find('=', i)
+
+        # Check for simple flags at current position
+        for flag in ['no', 'hologram', 'tile', 'crop']:
+            if filter_string[i:].startswith(flag):
+                # Check if it's followed by comma or end of string
+                flag_end = i + len(flag)
+                if flag_end >= len(filter_string) or filter_string[flag_end] == ',':
+                    filters.append([flag])
+                    i = flag_end
+                    if i < len(filter_string) and filter_string[i] == ',':
+                        i += 1
+                    continue
+
+        if eq_pos == -1 or eq_pos < i:
+            # No more equals signs
+            remaining = filter_string[i:].strip()
+            if remaining and remaining not in ['no', 'hologram', 'tile', 'crop']:
+                print(f"Warning: Unknown filter '{remaining}'", file=sys.stderr)
+            break
+
+        # Get the filter name
+        name = filter_string[i:eq_pos].strip()
+        if i > 0 and filter_string[i-1] == ',':
+            name = name[0:] if not name.startswith(',') else name[1:]
+
+        # Find the value - need special handling for solid colors
+        if name == 'solid':
+            # For solid colors, we need to find 3 comma-separated numbers
+            value_start = eq_pos + 1
+            # Skip whitespace
+            while value_start < len(filter_string) and filter_string[value_start].isspace():
+                value_start += 1
+
+            # Count commas to find BGR values
+            comma_count = 0
+            value_end = value_start
+            while value_end < len(filter_string) and comma_count < 2:
+                if filter_string[value_end] == ',':
+                    comma_count += 1
+                value_end += 1
+
+            # Find the end of the third number
+            while value_end < len(filter_string) and (filter_string[value_end].isdigit() or filter_string[value_end].isspace()):
+                value_end += 1
+
+            value = filter_string[value_start:value_end].strip()
+            i = value_end
+        else:
+            # For other filters, find the next comma that's not inside a value
+            value_start = eq_pos + 1
+            next_comma = filter_string.find(',', value_start)
+
+            # Check if there's another filter after this
+            next_eq = filter_string.find('=', value_start)
+            if next_eq != -1 and (next_comma == -1 or next_eq < next_comma):
+                # There's another filter, find where this value ends
+                j = next_eq - 1
+                while j > value_start and filter_string[j].isspace():
+                    j -= 1
+                # Now backtrack to find the comma or start
+                while j > value_start and filter_string[j] not in ',=':
+                    j -= 1
+                if filter_string[j] == ',':
+                    value_end = j
+                else:
+                    value_end = j + 1
+            elif next_comma != -1:
+                value_end = next_comma
+            else:
+                value_end = len(filter_string)
+
+            value = filter_string[value_start:value_end].strip()
+            i = value_end
+
+        # Skip comma if present
+        if i < len(filter_string) and filter_string[i] == ',':
+            i += 1
+
+        # Process the filter
+        if name == 'no':
             filters.append([name])
-        elif name == 'cmap' and len(value) > 0:
-            if value[0] not in colormaps:
-                print(f"skipped selfie filter: Unknown cmap color: {value[0]}", file=sys.stderr)
-                continue
-            filters.append([name, value[0]])
-        elif name == 'blur' and len(value) > 0 and value[0].isnumeric():
-            filters.append([name, min(100, max(0, int(value[0])))])
-        elif name == 'solid' and len(value) > 0: # one transformed arg
-            rgb = [int(e) if e.isnumeric() else 0 for e in value[0].split(',', 3)[:3]]
-            filters.append([name, rgb])
+        elif name == 'hologram':
+            filters.append([name])
+        elif name == 'tile':
+            filters.append([name])
+        elif name == 'crop':
+            filters.append([name])
+        elif name == 'file' and value:
+            filters.append([name, value])
+        elif name == 'foreground' and value:
+            filters.append([name, value])
+        elif name == 'mask-file' and value:
+            filters.append([name, value])
+        elif name == 'opacity' and value:
+            try:
+                opacity_val = int(value)
+                filters.append([name, opacity_val])
+            except ValueError:
+                print(f"Warning: Invalid opacity value '{value}'", file=sys.stderr)
+        elif name == 'brightness' and value:
+            try:
+                brightness_val = int(value)
+                filters.append([name, brightness_val])
+            except ValueError:
+                print(f"Warning: Invalid brightness value '{value}'", file=sys.stderr)
+        elif name == 'cmap' and value:
+            if value in colormaps:
+                filters.append([name, value])
+            else:
+                print(f"Warning: Unknown colormap '{value}'", file=sys.stderr)
+        elif name == 'blur' and value:
+            try:
+                blur_val = int(value)
+                filters.append([name, blur_val])
+            except ValueError:
+                print(f"Warning: Invalid blur value '{value}'", file=sys.stderr)
+        elif name == 'solid' and value:
+            rgb = [int(e.strip()) if e.strip().isdigit() else 0
+                   for e in value.split(',')[:3]]
+            if len(rgb) == 3:
+                filters.append([name, rgb])
+            else:
+                print(f"Warning: Invalid solid color '{value}'", file=sys.stderr)
+        elif name == 'mask-update-speed' and value:
+            try:
+                speed = int(value)
+                filters.append([name, speed])
+            except ValueError:
+                print(f"Warning: Invalid mask-update-speed '{value}'", file=sys.stderr)
+        else:
+            print(f"Warning: Unknown filter '{name}'", file=sys.stderr)
+
     return filters
+
+
+def create_filter_config(filter_list, component_type):
+    """Convert filter list to structured config dict with defaults."""
+    # Define default configurations for each component type
+    defaults = {
+        'selfie': {
+            'disabled': False,
+            'file': None,
+            'hologram': False,
+            'blur': None,
+            'solid': None,
+            'cmap': None,
+            'tile': False,
+            'crop': False,
+            'mask_update_speed': None,
+            'foreground_file': None,
+            'mask_file': None,
+            'opacity': None,
+            'brightness': None
+        },
+        'background': {
+            'disabled': False,
+            'file': 'background.jpg',  # Default background file
+            'hologram': False,
+            'blur': None,
+            'solid': None,
+            'cmap': None,
+            'tile': False,
+            'crop': False,
+            'mask_update_speed': 50,  # Default mask update speed
+            'foreground_file': None,
+            'mask_file': None,
+            'opacity': None,
+            'brightness': None
+        },
+        'mask': {
+            'disabled': False,
+            'file': 'foreground-mask.png',
+            'hologram': False,
+            'blur': None,
+            'solid': None,
+            'cmap': None,
+            'tile': False,
+            'crop': False,
+            'mask_update_speed': None,
+            'foreground_file': 'foreground.jpg',
+            'mask_file': 'foreground-mask.png',
+            'opacity': None,
+            'brightness': None
+        }
+    }
+
+    # Start with defaults for the component type
+    config = defaults[component_type].copy()
+
+    # Apply filters from the list
+    for filter_spec in filter_list:
+        name = filter_spec[0]
+        args = filter_spec[1:] if len(filter_spec) > 1 else []
+
+        if name == 'no':
+            config['disabled'] = True
+            config['file'] = None  # Disable file when 'no' is specified
+        elif name == 'hologram':
+            config['hologram'] = True
+        elif name == 'tile':
+            config['tile'] = True
+        elif name == 'crop':
+            config['crop'] = True
+        elif name == 'file' and args:
+            config['file'] = args[0]
+            config['disabled'] = False  # Enable when file is specified
+        elif name == 'blur' and args:
+            config['blur'] = args[0]
+        elif name == 'solid' and args:
+            config['solid'] = args[0]
+        elif name == 'cmap' and args:
+            config['cmap'] = args[0]
+        elif name == 'mask-update-speed' and args:
+            config['mask_update_speed'] = args[0]
+        elif name == 'foreground' and args:
+            config['foreground_file'] = args[0]
+        elif name == 'mask-file' and args:
+            config['mask_file'] = args[0]
+            config['file'] = args[0]  # Also set file for backward compatibility
+        elif name == 'opacity' and args:
+            config['opacity'] = args[0]
+        elif name == 'brightness' and args:
+            config['brightness'] = args[0]
+
+    return config
+
+
+def apply_effects_from_config(frame, config):
+    """Apply effects based on structured config dict."""
+    if config['hologram']:
+        frame = hologram_effect(frame)
+    if config['blur'] is not None:
+        frame = blur_effect(frame, config['blur'])
+    if config['solid'] is not None:
+        frame = solid_effect(frame, config['solid'])
+    if config['cmap'] is not None:
+        frame = cmap_effect(frame, config['cmap'])
+    if config['brightness'] is not None:
+        frame = brightness_effect(frame, config['brightness'])
+
+    return frame
+
 
 def sigint_handler(cam, signal, frame):
     cam.toggle_pause()
@@ -542,13 +833,13 @@ def _log_camera_property_not_set(prop, value):
 
 
 def main():
-    args = parse_args()
+    args = parser().parse_args()
     cam = FakeCam(args)
     signal.signal(signal.SIGINT, partial(sigint_handler, cam))
     signal.signal(signal.SIGQUIT, partial(sigquit_handler, cam))
     print("Running...")
     print("Please CTRL-C to pause and reload the background / foreground images")
-    print("Please CTRL-\ to exit")
+    print("Please CTRL-\\ to exit")
     # frames forever
     cam.run()
 

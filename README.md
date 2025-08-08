@@ -183,8 +183,6 @@ cd Linux-Fake-Background-Webcam
 python -m pip install --upgrade .
 ```
 
-If pip complains about being unable to resolve `mediapipe`, it means you are running an unsupported Python version (<3.8 or >3.11). Mediapipe currently supports only Python 3.8-3.11.
-
 ### Installing with Docker
 The use of Docker is no longer supported. I no longer see any reason for using
 Docker with this software. However I have left behind the files

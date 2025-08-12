@@ -2,12 +2,12 @@
 # place this file into a location suitable for user-defined systemd units
 # (e.g $HOME/.config/systemd/user)
 #
-# To enable and run the fakecam service, run
-# systemctl --user enable fakecam.service
-# systemctl --user start fakecam.service
+# To enable and run the lfbw service, run
+# systemctl --user enable lfbw.service
+# systemctl --user start lfbw.service
 
 [Unit]
-Description=Fake camera
+Description=Linux Fake Background Webcam
 After=network.target
 
 [Service]

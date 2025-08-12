@@ -15,13 +15,13 @@ packages = [
 lfbw = 'lfbw.lfbw:main'
 
 [tool.poetry.dependencies]
-python = ">=3.9"
-numpy = ">=1.19.3"
-opencv-python = ">=4.4.0.46"
+python = ">=3.11"
+numpy = ">=1.26.4"
+opencv-python = ">=4.11.0.86"
 pyfakewebcam = ">=0.1.0"
-mediapipe = ">=0.8.7.1"
-inotify_simple = ">=1.2"
+mediapipe = ">=0.10.21"
+inotify_simple = ">=1.3.5"
 cmapy = ">=0.6.6"
-configargparse = ">=1.5.0"
-protobuf = "3.20.2"
+configargparse = ">=1.7.1"
+protobuf = ">=4.25.8"
 

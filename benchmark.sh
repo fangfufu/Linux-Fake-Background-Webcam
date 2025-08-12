@@ -71,10 +71,10 @@ for module in sys.argv[1:]:
         print(module, "not found")
 ' $(sed -rn 's/^([A-Z0-9][A-Z0-9._-]*[A-Z0-9]).*/\1/pi' requirements.txt); echo
 
-# run fake.py for specified timeout and gather statistics
+# run lfbw.py for specified timeout and gather statistics
 export PYTHONUNBUFFERED=yes
 timeout --foreground --preserve-status -s QUIT "$timeout" \
-    ./fake.py -w /dev/video99 -v /dev/video100 \
+    ./lfbw.py -w /dev/video99 -v /dev/video100 \
         -W "$width" -H "$height" -F "$fps" --no-ondemand "$@" |
     stdbuf -oL tr '\r' '\n' |
     python3 -c '

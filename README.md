@@ -2,6 +2,10 @@
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/9ab112be62e4472aa114181bcde1a885)](https://app.codacy.com/gh/fangfufu/Linux-Fake-Background-Webcam/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 
 # Linux-Fake-Background-Webcam
+> [!WARNING]
+> Please read the "Installation of the Python package" section carefully for
+> the installation on system with Python 3.13 and above. This includes
+> **Debian 13 "Trixie"**
 
 ## Background
 Video conferencing software support for background blurring and background
@@ -103,29 +107,6 @@ To remove a virtual video device, use `sudo v4l2loopback-ctl delete /dev/video2`
 
 To list available virtual video devices, use `sudo v4l2loopback-ctl list`.
 
-#### Ubuntu 18.04
-If you are using Ubuntu 18.04, and if you want to use v4l2loopback, please
-compile v4l2loopback from the source. You need to do the following:
-1. Remove the ``v4l2loopback`` package
-    - `sudo rmmod -r v4l2loopback`
-    - `sudo apt-get remove v4l2loopback-dkms`
-2. Install DKMS and the Linux kernel headers
-    - ``sudo apt-get install dkms linux-headers-`uname -r` ``
-3. Install v4l2loopback from the repository
-    - `git clone https://github.com/umlaeute/v4l2loopback.git`
-    - `cd v4l2loopback`
-4. Install the module via DKMS
-    - `sudo cp -R . /usr/src/v4l2loopback-1.1`
-    - `sudo dkms add -m v4l2loopback -v 1.1`
-    - `sudo dkms build -m v4l2loopback -v 1.1`
-    - `sudo dkms install -m v4l2loopback -v 1.1`
-5. Load the module
-    - `sudo modprobe v4l2loopback`
-
-This may apply for other versions of Ubuntu as well. For more information,
-please refer to the following Github
-[issue](https://github.com/jremmons/pyfakewebcam/issues/7#issuecomment-616617011).
-
 ### Akvcam
 To install akvcam, you need to do the following:
 1. Install the driver by following the instruction at
@@ -162,37 +143,56 @@ Both v4l2loopback and Akvcam require custom kernel module. This might not be
 possible if you have secure boot enabled. Please refer to your device
 manufacturer's manual on disabling secure boot.
 
-## Installation
+## Installation of the Python package
+This had been tested under Debian 13 "Trixie". 
 
-Set up a Python virtual environment. You can use conda, pyenv, virtual-env or whatever you like.
-
-Activate this virtual environment.
-
-Mediapipe requires pip version 19.3 or above. (Please refer to [here](https://pypi.org/project/mediapipe/#files) and [here](https://github.com/pypa/manylinux)).
-Upgrade pip by running:
-
+You need pyenv because Mediapipe does not support Python 3.13 yet! Debian 13
+ships with Python 3.13. 
 ```
-python -m pip install --upgrade pip
+sudo apt-get install pyenv
 ```
 
-Then clone the repository and install the software:
+Add the following to your `.profile`:
+```
+export PYENV_ROOT="$HOME/.pyenv"
+[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init - bash)"
+```
 
+Log out, then log back in, then install Python 3.12 locally:
+```
+pyenv install 3.12
+```
+
+Clone this repository:
 ```
 git clone https://github.com/fangfufu/Linux-Fake-Background-Webcam
-cd Linux-Fake-Background-Webcam
-python -m pip install --upgrade .
 ```
 
-### Installing with Docker
-The use of Docker is no longer supported. I no longer see any reason for using
-Docker with this software. However I have left behind the files
-related to Docker, for those who want to fix Docker support.
-Please also refer to [DOCKER.md](DOCKER.md). The Docker related files were
-provided by [liske](https://github.com/liske).
+Set up a Python virtual environment inside the downloaded repository: 
+```
+cd Linux-Fake-Background-Webcam
+```
 
-Docker made starting up and shutting down the virtual webcam more convenient
-for when Bodypix was needed. The ability to change background and foreground
-images on-the-fly is unsupported when running under Docker.
+Set local Python version to 3.12:
+```
+pyenv local 3.12
+```
+
+Set up a Python virtual environment:
+```
+python -m venv venv
+```
+
+Activate the virtual environment:
+```
+source venv/bin/activate
+```
+
+Install the package
+```
+pip install --upgrade .
+```
 
 ## Usage
 

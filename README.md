@@ -231,105 +231,65 @@ be read by OpenCV.
 `lfbw` supports the following options:
 
 ```
-usage: lfbw    [-h] [-c CONFIG] [-W WIDTH] [-H HEIGHT] [-F FPS] [-C CODEC]
-               [-w WEBCAM_PATH] [-v V4L2LOOPBACK_PATH] [--no-background]
-               [-b BACKGROUND_IMAGE] [--tile-background] [--background-blur k]
-               [--background-blur-sigma-frac frac] [--background-keep-aspect]
-               [--no-foreground] [-f FOREGROUND_IMAGE]
-               [-m FOREGROUND_MASK_IMAGE] [--hologram] [--no-ondemand]
-               [--background-mask-update-speed BACKGROUND_MASK_UPDATE_SPEED]
-               [--use-sigmoid] [--threshold THRESHOLD] [--no-postprocess]
-               [--select-model SELECT_MODEL] [--cmap-person CMAP_PERSON]
-               [--cmap-bg CMAP_BG]
+usage: lfbw.py [-h] [-c CONFIG] [-W WIDTH] [-H HEIGHT] [-F FPS] [-C CODEC] [-w WEBCAM_PATH] [-v V4L2LOOPBACK_PATH] [--selfie SELFIE] [--background BACKGROUND] [--mask MASK] [--no-ondemand]
+               [--use-sigmoid] [--threshold THRESHOLD] [--no-postprocess] [--select-model SELECT_MODEL] [--dump]
 
-Faking your webcam background under GNU/Linux. Please refer to:
-https://github.com/fangfufu/Linux-Fake-Background-Webcam
+Faking your webcam background under GNU/Linux. Please refer to: https://github.com/fangfufu/Linux-Fake-Background-Webcam
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   -c CONFIG, --config CONFIG
-                        Config file (default: None)
+                        Config file
   -W WIDTH, --width WIDTH
-                        Set real webcam width (default: 1280)
+                        Set real webcam width
   -H HEIGHT, --height HEIGHT
-                        Set real webcam height (default: 720)
-  -F FPS, --fps FPS     Set real webcam FPS (default: 30)
+                        Set real webcam height
+  -F FPS, --fps FPS     Set real webcam FPS
   -C CODEC, --codec CODEC
-                        Set real webcam codec (default: MJPG)
+                        Set real webcam codec
   -w WEBCAM_PATH, --webcam-path WEBCAM_PATH
-                        Set real webcam path (default: /dev/video0)
+                        Set real webcam path
   -v V4L2LOOPBACK_PATH, --v4l2loopback-path V4L2LOOPBACK_PATH
-                        V4l2loopback device path (default: /dev/video2)
-  --no-background       Disable background image and blur the real background
-                        (default: False)
-  -b BACKGROUND_IMAGE, --background-image BACKGROUND_IMAGE
-                        Background image path, animated background is
-                        supported. (default: background.jpg)
-  --tile-background     Tile the background image (default: False)
-  --background-blur k   The gaussian bluring kernel size in pixels (default:
-                        21)
-  --background-blur-sigma-frac frac
-                        The fraction of the kernel size to use for the sigma
-                        value (ie. sigma = k / frac) (default: 3)
-  --background-keep-aspect
-                        Crop background if needed to maintain aspect ratio
-                        (default: False)
-  --no-foreground       Disable foreground image (default: False)
-  -f FOREGROUND_IMAGE, --foreground-image FOREGROUND_IMAGE
-                        Foreground image path (default: foreground.jpg)
-  -m FOREGROUND_MASK_IMAGE, --foreground-mask-image FOREGROUND_MASK_IMAGE
-                        Foreground mask image path (default: foreground-
-                        mask.png)
-  --hologram            Add a hologram effect. Shortcut for --selfie=hologram
-                        (default: False)
-  --selfie SELFIE       Foreground effects. Can be passed multiple time and
-                        support the following effects: "hologram",
-                        "solid=<N,N,N>", "cmap=<name>" and "blur=<N>"
-                        (default: [])
-  --no-ondemand         Continue processing when there is no application
-                        using the virtual webcam (default: False)
-  --background-mask-update-speed BACKGROUND_MASK_UPDATE_SPEED
-                        The running average percentage for background mask
-                        updates (default: 50)
+                        V4l2loopback device path
+  --selfie SELFIE       Selfie effects (comma-separated)
+  --background BACKGROUND
+                        Background effects (comma-separated)
+  --mask MASK           Mask effects (comma-separated)
+  --no-ondemand         Continue processing when there is no application using the virtual webcam
   --use-sigmoid         Force the mask to follow a sigmoid distribution
-                        (default: False)
   --threshold THRESHOLD
-                        The minimum percentage threshold for accepting a pixel
-                        as foreground (default: 75)
+                        The minimum percentage threshold for accepting a pixel as foreground
   --no-postprocess      Disable postprocessing (masking dilation and blurring)
-                        (default: True)
   --select-model SELECT_MODEL
-                        Select the model for MediaPipe. For more information,
-                        please refer to https://github.com/fangfufu/Linux-
-                        Fake-Background-
-                        Webcam/issues/135#issuecomment-883361294 (default: 1)
-  --cmap-person CMAP_PERSON
-                        Apply colour map to the person using cmapy. Shortcut
-                        for --selfie=cmap=<name>. For examples, please refer
-                        to https://gitlab.com/cvejarano-
-                        oss/cmapy/blob/master/docs/colorize_all_examples.md
-                        (default: None)
-  --cmap-bg CMAP_BG     Apply colour map to background using cmapy (default:
-                        None)
+                        Select the model for MediaPipe. For more information, please refer to https://github.com/fangfufu/Linux-Fake-Background-Webcam/issues/135#issuecomment-883361294
+  --dump                Dump the filter configuration and exit
 
---selfie=<filter> can be specified multiple times and accept a filter + its optional
-arguments like --selfie=FILTER[=FILTER_ARGUMENTS].
+Unified filter options for selfie, background, and mask:
 
-Each filter is applied to the foreground (self) in the order they appear.
-The following are supported:
-- hologram: Apply an hologram effect?
-- solid=<B,G,R>: Fill-in the foreground fowith the specific color
-- cmap=<name>: Apply colour map <name> using cmapy
-- blur=<N>: Blur (0-100)
+Each component accepts a comma-separated list of effects:
+- file=<filename>: Use specified image/video file
+- hologram: Apply hologram effect
+- blur=<N>: Apply blur with intensity 0-100
+- solid=<B,G,R>: Fill with specific BGR color
+- cmap=<name>: Apply color map using cmapy
+- brightness=<N>: Adjust brightness 0-200 (100=normal)
+- no: Disable component (background and mask)
+- tile: Tile the image (background only)
+- crop: Maintain aspect ratio by cropping (background only)
+- mask-update-speed=<N>: Control mask update speed (background only)
+- foreground=<filename>: Specify foreground image to overlay (mask only)
+- mask-file=<filename>: Explicitly specify mask file when using foreground (mask only)
+- opacity=<N>: Set opacity 0-100 (selfie: person transparency, mask: overlay transparency)
 
-Example:
-lfbw.py --selfie=blur=30 --selfie=hologram # slightly blur and apply the hologram effect
+Examples:
+lfbw.py --selfie=blur=30,hologram
+lfbw.py --background=file=mybg.jpg,cmap=viridis
+lfbw.py --background=no,blur=50
+lfbw.py --mask=file=mask.png,blur=20
+lfbw.py --mask=foreground=logo.png,mask-file=logo-mask.png,opacity=80
 
-Args that start with '--' (eg. -W) can also be set in a config file (specified
-via -c). Config file syntax allows: key=value, flag=true, stuff=[a,b,c] (for
-details, see syntax at https://goo.gl/R74nmi). If an arg is specified in more
-than one place, then commandline values override config file values which
-override defaults.
+Args that start with '--' can also be set in a config file (specified via -c). Config file syntax allows: key=value, flag=true, stuff=[a,b,c] (for details, see syntax at https://goo.gl/R74nmi). In
+general, command-line values override config file values which override defaults.
 ```
 
 ### Per-user systemd service

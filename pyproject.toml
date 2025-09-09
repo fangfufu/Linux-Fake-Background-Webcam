@@ -25,3 +25,10 @@ cmapy = ">=0.6.6"
 configargparse = ">=1.7.1"
 protobuf = ">=4.25.8"
 
+
+[tool.codespell]
+# Ref: https://github.com/codespell-project/codespell#using-a-config-file
+skip = '.git*'
+check-hidden = true
+# ignore-regex = ''
+# ignore-words-list = ''

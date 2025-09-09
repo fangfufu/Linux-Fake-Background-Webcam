@@ -52,7 +52,7 @@ Once installed, the module needs to be loaded. This can be done manually for
 the current session by running
 
 ```shell
-sudo modprobe v4l2loopback devices=1 exclusive_caps=1 video_nr=2 card_label="fake-cam"
+sudo modprobe v4l2loopback devices=1 exclusive_caps=1 video_nr=10 card_label="fake-cam"
 ```
 
 which will create a virtual video device `/dev/video2`, however, this will not

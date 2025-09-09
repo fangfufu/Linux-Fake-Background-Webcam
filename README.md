@@ -208,7 +208,7 @@ To run with a config file, use the following command:
 lfbw -c ./config-example.ini
 ```
 
-The files that you might want to replace are the followings:
+The files that you might want to replace are the following:
 
   - ``background.jpg`` - the background image
   - ``foreground.jpg`` - the foreground image

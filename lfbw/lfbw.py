@@ -15,6 +15,50 @@ import time
 from cmapy import cmap
 from matplotlib import colormaps
 import copy
+from pathlib import Path
+import urllib.request
+
+import mediapipe as mp
+from mediapipe.tasks import python
+from mediapipe.tasks.python import vision
+
+
+class ImageSegmenter:
+
+    def __init__(self, width, height):
+        base_options = python.BaseOptions(model_asset_path='selfie_segmenter_landscape.tflite')
+        options = vision.ImageSegmenterOptions(
+            base_options=base_options,
+            output_category_mask=True
+        )
+        self.orig_w, self.orig_h = width, height
+        self.target_w = 256
+        self.target_h = int(256 * self.orig_h / self.orig_w)
+        self.segmenter = vision.ImageSegmenter.create_from_options(options)
+    
+    def segment(self, frame):
+
+        mp_frame = cv2.resize(frame, (self.target_w, self.target_h), interpolation=cv2.INTER_AREA)
+        mp_frame = cv2.cvtColor(mp_frame, cv2.COLOR_BGR2RGB)
+        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=mp_frame)
+
+        segmentation_result = self.segmenter.segment(mp_image)
+        category_mask = segmentation_result.category_mask.numpy_view()
+        mask = (category_mask == 0).astype(np.float32)
+
+        # Upscale mask back to original resolution
+        mask_upscaled = cv2.resize(mask, (self.orig_w, self.orig_h), interpolation=cv2.INTER_LINEAR)
+
+        # Smooth edges to reduce cutting/inconsistency
+        mask_upscaled = cv2.GaussianBlur(mask_upscaled, (7, 7), 0)
+
+        return mask_upscaled
+
+    def close(self):
+        if self.segmenter:
+            self.segmenter.close()
+            self.segmenter = None
+
 
 class RealCam:
     def __init__(self, src, frame_width, frame_height, frame_rate, codec):
@@ -126,10 +170,18 @@ class FakeCam:
             print(self.__dict__)
             sys.exit(0)
 
-        # slow model loading
-        import mediapipe as mp
-        self.classifier = mp.solutions.selfie_segmentation.SelfieSegmentation(
-            model_selection=args.select_model)
+        if not Path('selfie_segmenter_landscape.tflite').exists():
+            filename = "selfie_segmenter_landscape.tflite"
+            url = "https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter_landscape/float16/latest/selfie_segmenter_landscape.tflite"
+            try:
+                print("Downloading model...")
+                with urllib.request.urlopen(url) as response:
+                    with open(filename, 'wb') as out_file:
+                        out_file.write(response.read())
+            except Exception:
+                print("Cannot download MediaPipe model")
+
+        self.classifier = ImageSegmenter(self.real_width, self.real_height)
 
 
     def resize_image(self, img, keep_aspect):
@@ -264,7 +316,7 @@ class FakeCam:
                                                            (self.width, self.height))
 
     def compose_frame(self, frame):
-        mask = copy.copy(self.classifier.process(frame).segmentation_mask)
+        mask = copy.copy(self.classifier.segment(frame))
 
         if self.threshold < 1:
             cv2.threshold(mask, self.threshold, 1, cv2.THRESH_BINARY, dst=mask)
@@ -800,6 +852,7 @@ def sigint_handler(cam, signal, frame):
 
 def sigquit_handler(cam, signal, frame):
     print("\nKilling fake cam process")
+    cam.classifier.close()
     sys.exit(0)
 
 

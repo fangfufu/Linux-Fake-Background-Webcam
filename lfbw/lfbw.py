@@ -10,7 +10,7 @@ from functools import partial
 from typing import Any, Dict
 import cv2
 import numpy as np
-import pyfakewebcam
+import pyvirtualcam
 import time
 from cmapy import cmap
 from matplotlib import colormaps
@@ -157,8 +157,13 @@ class FakeCam:
         # In case the real webcam does not support the requested mode.
         self.real_width = self.real_cam.get_frame_width()
         self.real_height = self.real_cam.get_frame_height()
-        self.fake_cam = pyfakewebcam.FakeWebcam(self.v4l2loopback_path, self.width,
-                                                self.height)
+        self.fake_cam = pyvirtualcam.Camera(
+            width=self.width,
+            height=self.height,
+            fps=self.fps,
+            fmt=pyvirtualcam.PixelFormat.BGR,
+            device=self.v4l2loopback_path
+        )
         self.foreground_mask = None
         self.inverted_foreground_mask = None
         self.images: Dict[str, Any] = {}
@@ -391,7 +396,7 @@ class FakeCam:
         return frame
 
     def put_frame(self, frame):
-        self.fake_cam.schedule_frame(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+        self.fake_cam.send(frame)
 
     def run(self):
         self.load_images()
@@ -452,7 +457,7 @@ class FakeCam:
                     self.real_cam = None
                     if blank_image is not None:
                         blank_image.flags.writeable = True
-                    blank_image = np.zeros((self.height, self.width), dtype=np.uint8)
+                    blank_image = np.zeros((self.height, self.width, 3), dtype=np.uint8)
                     blank_image.flags.writeable = False
                 self.put_frame(blank_image)
                 time.sleep(1)
@@ -853,6 +858,8 @@ def sigint_handler(cam, signal, frame):
 def sigquit_handler(cam, signal, frame):
     print("\nKilling fake cam process")
     cam.classifier.close()
+    if hasattr(cam, 'fake_cam') and cam.fake_cam:
+        cam.fake_cam.close()
     sys.exit(0)
 
 

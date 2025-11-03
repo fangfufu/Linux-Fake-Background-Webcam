@@ -10,8 +10,10 @@ from functools import partial
 from typing import Any, Dict
 import cv2
 import numpy as np
-import pyfakewebcam
+import pyvirtualcam
 import time
+import threading
+import queue
 from cmapy import cmap
 from matplotlib import colormaps
 import copy
@@ -157,8 +159,18 @@ class FakeCam:
         # In case the real webcam does not support the requested mode.
         self.real_width = self.real_cam.get_frame_width()
         self.real_height = self.real_cam.get_frame_height()
-        self.fake_cam = pyfakewebcam.FakeWebcam(self.v4l2loopback_path, self.width,
-                                                self.height)
+        self.fake_cam = pyvirtualcam.Camera(
+            width=self.width,
+            height=self.height,
+            fps=self.fps,
+            fmt=pyvirtualcam.PixelFormat.BGR,
+            device=self.v4l2loopback_path
+        )
+
+        self.frame_queue = queue.Queue(maxsize=2)
+        self.shutdown_event = threading.Event()
+        self.sender_thread = None
+
         self.foreground_mask = None
         self.inverted_foreground_mask = None
         self.images: Dict[str, Any] = {}
@@ -391,14 +403,33 @@ class FakeCam:
         return frame
 
     def put_frame(self, frame):
-        self.fake_cam.schedule_frame(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+        self.fake_cam.send(frame)
+
+    def _frame_sender_thread(self):
+        """Thread to send frames to the virtual camera."""
+        blank_image = np.zeros((self.height, self.width, 3), dtype=np.uint8)
+        blank_image.flags.writeable = False
+        last_frame = blank_image
+
+        while not self.shutdown_event.is_set():
+            try:
+                frame = self.frame_queue.get(timeout=0.1)
+                last_frame = frame
+            except queue.Empty:
+                frame = blank_image if self.paused else last_frame
+
+            self.fake_cam.send(frame)
+            self.fake_cam.sleep_until_next_frame()
 
     def run(self):
         self.load_images()
+
+        self.sender_thread = threading.Thread(target=self._frame_sender_thread, daemon=True)
+        self.sender_thread.start()
+
         t0 = time.monotonic()
         print_fps_period = 1
         frame_count = 0
-        blank_image = None
 
         inotify = INotify(nonblocking=True)
         if self.ondemand:
@@ -437,7 +468,12 @@ class FakeCam:
                 if self.width != self.real_width or self.height != self.real_height:
                     frame = cv2.resize(frame, (self.width, self.height))
                 frame = self.compose_frame(frame)
-                self.put_frame(frame)
+
+                try:
+                    self.frame_queue.put(frame.copy(), block=False)
+                except queue.Full:
+                    pass
+
                 frame_count += 1
                 td = time.monotonic() - t0
                 if td > print_fps_period:
@@ -446,16 +482,9 @@ class FakeCam:
                     frame_count = 0
                     t0 = time.monotonic()
             else:
-                width = 0
-                height = 0
                 if self.real_cam is not None:
                     self.real_cam = None
-                    if blank_image is not None:
-                        blank_image.flags.writeable = True
-                    blank_image = np.zeros((self.height, self.width), dtype=np.uint8)
-                    blank_image.flags.writeable = False
-                self.put_frame(blank_image)
-                time.sleep(1)
+                time.sleep(0.1)
 
     def toggle_pause(self):
         self.paused = not self.paused
@@ -464,6 +493,31 @@ class FakeCam:
         else:
             print("\nResuming, reloading background / foreground images...")
             self.load_images()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+        return False
+
+    def close(self):
+        """Clean up resources"""
+        if hasattr(self, 'shutdown_event'):
+            self.shutdown_event.set()
+
+        if hasattr(self, 'sender_thread') and self.sender_thread is not None:
+            if self.sender_thread.is_alive():
+                self.sender_thread.join(timeout=2.0)
+                if self.sender_thread.is_alive():
+                    print("Warning: Sender thread did not terminate gracefully")
+
+        if hasattr(self, 'classifier') and self.classifier:
+            self.classifier.close()
+
+        if hasattr(self, 'fake_cam') and self.fake_cam:
+            self.fake_cam.close()
+            self.fake_cam = None
 
 
 def parser():
@@ -852,7 +906,7 @@ def sigint_handler(cam, signal, frame):
 
 def sigquit_handler(cam, signal, frame):
     print("\nKilling fake cam process")
-    cam.classifier.close()
+    cam.close()
     sys.exit(0)
 
 
@@ -887,14 +941,13 @@ def _log_camera_property_not_set(prop, value):
 
 def main():
     args = parser().parse_args()
-    cam = FakeCam(args)
-    signal.signal(signal.SIGINT, partial(sigint_handler, cam))
-    signal.signal(signal.SIGQUIT, partial(sigquit_handler, cam))
-    print("Running...")
-    print("Please CTRL-C to pause and reload the background / foreground images")
-    print("Please CTRL-\\ to exit")
-    # frames forever
-    cam.run()
+    with FakeCam(args) as cam:
+        signal.signal(signal.SIGINT, partial(sigint_handler, cam))
+        signal.signal(signal.SIGQUIT, partial(sigquit_handler, cam))
+        print("Running...")
+        print("Please CTRL-C to pause and reload the background / foreground images")
+        print("Please CTRL-\\ to exit")
+        cam.run()
 
 
 if __name__ == "__main__":

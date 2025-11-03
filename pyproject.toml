@@ -18,7 +18,7 @@ lfbw = 'lfbw.lfbw:main'
 python = ">=3.11"
 numpy = ">=1.26.4"
 opencv-python = ">=4.11.0.86"
-pyfakewebcam = ">=0.1.0"
+pyvirtualcam = ">=0.11.0"
 mediapipe = ">=0.10.21"
 inotify_simple = ">=1.3.5"
 cmapy = ">=0.6.6"

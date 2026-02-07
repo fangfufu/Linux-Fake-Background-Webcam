@@ -16,7 +16,6 @@ import threading
 import queue
 from cmapy import cmap
 from matplotlib import colormaps
-import copy
 from pathlib import Path
 import urllib.request
 
@@ -328,7 +327,7 @@ class FakeCam:
                                                            (self.width, self.height))
 
     def compose_frame(self, frame):
-        mask = copy.copy(self.classifier.segment(frame))
+        mask = self.classifier.segment(frame)
 
         if self.threshold < 1:
             cv2.threshold(mask, self.threshold, 1, cv2.THRESH_BINARY, dst=mask)

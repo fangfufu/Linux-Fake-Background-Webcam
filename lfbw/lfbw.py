@@ -36,24 +36,26 @@ class ImageSegmenter:
         self.target_w = 256
         self.target_h = int(256 * self.orig_h / self.orig_w)
         self.segmenter = vision.ImageSegmenter.create_from_options(options)
+        self.mp_frame_buffer = np.zeros((self.target_h, self.target_w, 3), dtype=np.uint8)
+        self.mask_upscaled_buffer = np.zeros((self.orig_h, self.orig_w), dtype=np.float32)
     
     def segment(self, frame):
 
-        mp_frame = cv2.resize(frame, (self.target_w, self.target_h), interpolation=cv2.INTER_AREA)
-        mp_frame = cv2.cvtColor(mp_frame, cv2.COLOR_BGR2RGB)
-        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=mp_frame)
+        cv2.resize(frame, (self.target_w, self.target_h), dst=self.mp_frame_buffer, interpolation=cv2.INTER_AREA)
+        cv2.cvtColor(self.mp_frame_buffer, cv2.COLOR_BGR2RGB, dst=self.mp_frame_buffer)
+        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=self.mp_frame_buffer)
 
         segmentation_result = self.segmenter.segment(mp_image)
         category_mask = segmentation_result.category_mask.numpy_view()
         mask = (category_mask == 0).astype(np.float32)
 
         # Upscale mask back to original resolution
-        mask_upscaled = cv2.resize(mask, (self.orig_w, self.orig_h), interpolation=cv2.INTER_LINEAR)
+        cv2.resize(mask, (self.orig_w, self.orig_h), dst=self.mask_upscaled_buffer, interpolation=cv2.INTER_LINEAR)
 
         # Smooth edges to reduce cutting/inconsistency
-        mask_upscaled = cv2.GaussianBlur(mask_upscaled, (7, 7), 0)
+        cv2.GaussianBlur(self.mask_upscaled_buffer, (7, 7), 0, dst=self.mask_upscaled_buffer)
 
-        return mask_upscaled
+        return self.mask_upscaled_buffer
 
     def close(self):
         if self.segmenter:
